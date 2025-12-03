@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Înregistrare Mașină</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-nav">Înregistrează Mașina</div>
+
+    <div class="container">
+        <h3>1. Cont Utilizator</h3>
+        <input type="email" id="email" placeholder="Adresa de Email (pentru logare și contact)" required>
+        <input type="password" id="password" placeholder="Parola" required>
+
+        <h3>2. Detalii Mașină</h3>
+        <input type="text" id="carModel" placeholder="Modelul Mașinii (ex: BMW X5)" required>
+        <input type="text" id="carPlate" placeholder="Număr Înmatriculare (opțional)">
+        <input type="url" id="imageUrl" placeholder="Link Poză Mașină (URL)" required>
+        <input type="text" id="country" placeholder="Țara (ex: România)">
+
+        <label for="status">Status Mașină:</label>
+        <select id="status" onchange="toggleFields()">
+            <option value="FOR_SALE">FOR SALE (De Vânzare)</option>
+            <option value="NOT_FOR_SALE" selected>NOT FOR SALE (Colecție)</option>
+        </select>
+
+        <div id="notSaleFields">
+            <input type="number" id="year" placeholder="An Fabricație" min="1900">
+            <input type="number" id="mileage" placeholder="Kilometraj" min="0">
+            <input type="text" id="fuelType" placeholder="Tip Combustibil (ex: Benzină, Diesel)">
+            <input type="text" id="color" placeholder="Culoare">
+        </div>
+
+        <textarea id="description" placeholder="Descriere (Scrie orice dorești...)" rows="4"></textarea>
+
+        <h3>3. Opțiuni Contact</h3>
+        <select id="contactMethod" onchange="toggleContact()">
+            <option value="Chat">Chat (Email)</option>
+            <option value="Call">Call (Telefon)</option>
+            <option value="Both">Chat & Call (Ambele)</option>
+        </select>
+
+        <input type="tel" id="contactPhone" placeholder="Număr de Telefon" class="hidden">
+
+        <button onclick="registerUser()">Înregistrează Mașina</button>
+        <p style="text-align: center; margin-top:10px;"><a href="index.html">Intră pe Home (Feed)</a></p>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="index.html">🏠 Home</a>
+        <a href="register.html" style="color: #007bff;">➕ Înregistrare</a>
+        <a href="#" onclick="goToProfile()">👤 Profile</a>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Logica vizuală pentru formular (ascundere/afișare câmpuri)
+        function toggleFields() {
+            const status = document.getElementById('status').value;
+            const extraDiv = document.getElementById('notSaleFields');
+            if (status === 'NOT_FOR_SALE') {
+                extraDiv.classList.remove('hidden');
+            } else {
+                extraDiv.classList.add('hidden');
+            }
+        }
+
+        function toggleContact() {
+            const method = document.getElementById('contactMethod').value;
+            const phoneInput = document.getElementById('contactPhone');
+            if (method === 'Call' || method === 'Both') {
+                phoneInput.classList.remove('hidden');
+            } else {
+                phoneInput.classList.add('hidden');
+            }
+        }
+        
+        // Asigurăm că logica rulează la încărcarea paginii
+        window.onload = function() {
+            toggleFields(); // Ascunde câmpurile Not Sale la încărcare
+            toggleContact(); // Ascunde câmpul de telefon la încărcare
+        };
+    </script>
+</body>
+</html>

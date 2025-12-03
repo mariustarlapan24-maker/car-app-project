@@ -1,0 +1,9 @@
+# Foldere Node
+node_modules
+
+# Fisiere de logare/debug
+npm-debug.log*
+*.log
+
+# Fisiere de configurare locale (Nu le urcam)
+.env
