@@ -12,7 +12,11 @@ app.use(express.static('public'));
 
 // 1. CONECTARE LA BAZA DE DATE (MongoDB Local - asigură-te că e pornit)
 // 1. CONECTARE LA BAZA DE DATE (Ignorăm erorile pentru a menține serverul Express activ)
-mongoose.connect('mongodb://127.0.0.1:27017/carAppDB').catch(() => console.log('❌ Eroare conectare DB: (Server Express ACTIV)'));
+const DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/carAppDB';
+
+mongoose.connect(DB_URI)
+  .then(() => console.log('✅ Conectat la MongoDB Atlas!'))
+  .catch(err => console.error('❌ Eroare conectare la bază de date:', err));
 
 // 2. CREAREA SCHEMEI (Cum arată datele unei mașini)
 const CarSchema = new mongoose.Schema({
