@@ -7,13 +7,20 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const axios = require('axios'); // NOU: Pentru ImgBB
-const FormData = require('form-data'); // NOU: Pentru ImgBB
+const ImageKit = require('imagekit'); // NOU: Pachetul ImageKit
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
+
+// --- CONFIGURARE IMAGEKIT ---
+// Folosim chei de mediu din Render!
+const imagekit = new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT // Exemplu: https://ik.imagekit.io/votre_id/
+});
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
 const storage = multer.memoryStorage();
@@ -26,7 +33,7 @@ mongoose.connect(DB_URI)
   .then(() => console.log('✅ Conectat la MongoDB Atlas!'))
   .catch(err => console.error('❌ Eroare conectare la bază de date:', err));
 
-// --- CONFIGURARE MIDDLEWARE ---
+// --- CONFIGURARE MIDDLEWARE (Restul codului rămâne la fel) ---
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -52,6 +59,7 @@ app.use((req, res, next) => {
 
 // ==========================================================
 // --- ⚙️ MODELE (SCHEMAS) ---
+// (LĂSAȚI ACEASTĂ SECȚIUNE LA FEL, SUNT MODELELE DUMNEAVOASTRĂ)
 // ==========================================================
 
 const userSchema = new mongoose.Schema({
@@ -74,30 +82,27 @@ const carSchema = new mongoose.Schema({
 const Car = mongoose.model('Car', carSchema);
 
 // ==========================================================
-// --- 🖥️ RUTE GET ---
+// --- 🖥️ RUTE GET & AUTH (LĂSAȚI ACEASTĂ SECȚIUNE LA FEL) ---
 // ==========================================================
+// (Rutele / și /login /register /profile etc. sunt aici)
+// ...
 
 app.get('/', (req, res) => {
     res.render('home', { title: 'Car-App - Acasă' });
 });
-
 app.get('/login', (req, res) => {
     res.render('login', { title: 'Login Car-App', error: null });
 });
-
 app.get('/register', (req, res) => {
     res.render('register', { title: 'Creează Cont', error: null });
 });
-
 app.get('/add-car', (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     res.render('add-car', { title: 'Adaugă mașină', error: null });
 });
-
 app.get('/profile', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     try {
-        // Găsim utilizatorul și populăm lista de mașini (aducem detaliile mașinilor)
         const user = await User.findById(req.session.userId).populate('cars');
         res.render('profile', { title: 'Profilul Meu', user: user, cars: user.cars });
     } catch (err) {
@@ -105,7 +110,6 @@ app.get('/profile', async (req, res) => {
         res.redirect('/');
     }
 });
-
 app.get('/chat', (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     res.render('chat', {
@@ -115,35 +119,21 @@ app.get('/chat', (req, res) => {
         roomId: 'defaultCarRoom'
     });
 });
-
-// ==========================================================
-// --- 🔍 API SEARCH ---
-// ==========================================================
-
 app.get('/api/search', async (req, res) => {
     const { plate } = req.query;
     if (!plate) return res.json([]);
-
     try {
         const cars = await Car.find({
             plateNumber: { $regex: '^' + plate, $options: 'i' }
-        })
-        .limit(10)
-        .select('plateNumber make model');
+        }).limit(10).select('plateNumber make model');
         res.json(cars);
     } catch (error) {
         res.status(500).json([]);
     }
 });
-
-// ==========================================================
-// --- 🔐 AUTH ---
-// ==========================================================
-
 app.post('/register', async (req, res) => {
     const { fullName, email, password, confirmPassword } = req.body;
     if (password !== confirmPassword) return res.render('register', { error: 'Parolele nu se potrivesc.', title: 'Creează Cont' });
-
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ fullName, email, password: hashedPassword });
@@ -155,7 +145,6 @@ app.post('/register', async (req, res) => {
         res.render('register', { error: 'A apărut o eroare la înregistrare.', title: 'Creează Cont' });
     }
 });
-
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -170,13 +159,11 @@ app.post('/login', async (req, res) => {
         res.render('login', { error: 'A apărut o eroare de server.', title: 'Login Car-App' });
     }
 });
-
 app.post('/guest-login', (req, res) => {
     req.session.userId = null;
     req.session.isGuest = true;
     res.redirect('/');
 });
-
 app.post('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/');
@@ -184,7 +171,7 @@ app.post('/logout', (req, res) => {
 });
 
 // ==========================================================
-// --- ➕ ADOUGĂ MAȘINĂ (CU IMGBB) ---
+// --- ➕ ADOUGĂ MAȘINĂ (CU IMAGEKIT) ---
 // ==========================================================
 
 app.post('/add-car', upload.single('carImage'), async (req, res) => {
@@ -196,22 +183,16 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
     if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
 
     try {
-        // 1. Pregătim imaginea pentru ImgBB (Base64)
-        const base64Image = file.buffer.toString('base64');
-        const formData = new FormData();
-        formData.append('image', base64Image);
-
-        // 2. Upload la ImgBB
-        // ATENȚIE: Trebuie să ai variabila IMGBB_API_KEY în Render!
-        const imgbbResponse = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, formData, {
-            headers: {
-                ...formData.getHeaders()
-            }
+        // 1. Upload la ImageKit
+        const uploadResponse = await imagekit.upload({
+            file: file.buffer.toString('base64'), // Trimitem buffer-ul ca base64
+            fileName: `${Date.now()}-${file.originalname}`,
+            folder: 'car-app-uploads' 
         });
 
-        const imageUrl = imgbbResponse.data.data.url;
+        const imageUrl = uploadResponse.url;
 
-        // 3. Salvare în MongoDB
+        // 2. Salvare în MongoDB
         const newCar = new Car({
             plateNumber: plateNumber.toUpperCase().trim(),
             make,
@@ -222,15 +203,18 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
 
         await newCar.save();
 
-        // 4. Actualizare User
+        // 3. Actualizare User
         await User.findByIdAndUpdate(req.session.userId, { $push: { cars: newCar._id } });
 
         res.redirect('/profile');
 
     } catch (error) {
-        console.error('Eroare la upload:', error.response ? error.response.data : error.message);
+        console.error('Eroare la upload ImageKit:', error.message);
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
+        if (error.message && error.message.includes('Authentication failed')) {
+             errorMessage = 'Eroare de autentificare ImageKit. Verificați cheile în Render!';
+        }
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
     }
 });
