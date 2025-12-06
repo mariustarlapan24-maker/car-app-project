@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 const imagekit = new ImageKit({
     publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
     privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT // Exemplu: https://ik.imagekit.io/votre_id/
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT 
 });
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
@@ -33,7 +33,7 @@ mongoose.connect(DB_URI)
   .then(() => console.log('✅ Conectat la MongoDB Atlas!'))
   .catch(err => console.error('❌ Eroare conectare la bază de date:', err));
 
-// --- CONFIGURARE MIDDLEWARE (Restul codului rămâne la fel) ---
+// --- CONFIGURARE MIDDLEWARE ---
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -59,7 +59,6 @@ app.use((req, res, next) => {
 
 // ==========================================================
 // --- ⚙️ MODELE (SCHEMAS) ---
-// (LĂSAȚI ACEASTĂ SECȚIUNE LA FEL, SUNT MODELELE DUMNEAVOASTRĂ)
 // ==========================================================
 
 const userSchema = new mongoose.Schema({
@@ -72,7 +71,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 const carSchema = new mongoose.Schema({
-    plateNumber: { type: String, required: true, unique: true }, // <-- DOAR AICI UNIQUE: TRUE
+    plateNumber: { type: String, required: true, unique: true }, 
     make: { type: String, required: true },
     model: { type: String, required: true },
     imageUrls: [{ type: String, required: true }],
@@ -82,10 +81,8 @@ const carSchema = new mongoose.Schema({
 const Car = mongoose.model('Car', carSchema);
 
 // ==========================================================
-// --- 🖥️ RUTE GET & AUTH (LĂSAȚI ACEASTĂ SECȚIUNE LA FEL) ---
+// --- 🖥️ RUTE GET & AUTH ---
 // ==========================================================
-// (Rutele / și /login /register /profile etc. sunt aici)
-// ...
 
 app.get('/', (req, res) => {
     res.render('home', { title: 'Car-App - Acasă' });
@@ -180,7 +177,8 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
     const { plateNumber, make, model } = req.body;
     const file = req.file;
 
-    if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
+    // Aici verificăm dacă formularul de frontend a trimis fișierul
+    if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine. (Verificați enctype în add-car.ejs)' });
 
     try {
         // 1. Upload la ImageKit
@@ -209,12 +207,18 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         res.redirect('/profile');
 
     } catch (error) {
-        console.error('Eroare la upload ImageKit:', error.message);
+        // Logare detaliată a erorii pentru diagnosticare
+        console.error('--- EROARE CRITICĂ UPLOAD IMAGEKIT ---');
+        console.error(error); 
+        
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
-        if (error.message && error.message.includes('Authentication failed')) {
-             errorMessage = 'Eroare de autentificare ImageKit. Verificați cheile în Render!';
+        
+        // Verificăm dacă eroarea este de la ImageKit (de obicei cod 4xx sau mesaj de autentificare)
+        if (error.statusCode === 401 || (error.message && error.message.includes('Authentication failed'))) {
+             errorMessage = `Eroare de autentificare ImageKit (Cod ${error.statusCode || 'Necunoscut'}). Vă rog să verificați cheile în Render!`;
         }
+
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
     }
 });
