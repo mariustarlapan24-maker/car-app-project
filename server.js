@@ -1,34 +1,28 @@
 // --- IMPORTURI NECESARE ---
 const express = require('express');
-const http = require('http'); 
-const socketIo = require('socket.io'); 
+const http = require('http');
+const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
+const axios = require('axios'); // NOU: Pentru ImgBB
+const FormData = require('form-data'); // NOU: Pentru ImgBB
 
 const app = express();
-const server = http.createServer(app); 
-const io = socketIo(server); 
+const server = http.createServer(app);
+const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
-// --- CONFIGURARE CLOUDINARY (PENTRU IMAGINI) ---
-cloudinary.config({
-    cloud_name: 'NUME_CLOUD_UL_VOSTRU', // <-- SCHIMBĂ!
-    api_key: 'CHEIA_API_VOASTRA',     // <-- SCHIMBĂ!
-    api_secret: 'SECRETUL_VOSTRU_API' // <-- SCHIMBĂ!
-});
-
-// --- CONFIGURARE MULTER (Stocare în memorie pentru a trimite la Cloudinary) ---
+// --- CONFIGURARE MULTER (Stocare în memorie) ---
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // --- CONEXIUNE LA MONGODB ATLAS ---
-const DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/carAppDB'; 
- 
-mongoose.connect(DB_URI) // <-- SCHIMBĂ URI-UL DACĂ FOLOSEȘTI ATLAS!
+const DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/carAppDB';
+
+mongoose.connect(DB_URI)
   .then(() => console.log('✅ Conectat la MongoDB Atlas!'))
   .catch(err => console.error('❌ Eroare conectare la bază de date:', err));
 
@@ -39,19 +33,19 @@ app.use(express.json());
 // Configurare EJS și fișiere statice
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public'))); 
+app.use(express.static(path.join(__dirname, 'public')));
 
-// --- CONFIGURAREA SESIUNILOR (pentru Login) ---
+// --- SESIUNI ---
 app.use(session({
-    secret: 'CHIE_SECRETA_SUPER_COMPLEXA_2025', 
-    resave: false, 
+    secret: 'CHIE_SECRETA_SUPER_COMPLEXA_2025',
+    resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } 
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
-// --- MIDDLEWARE PENTRU STAREA UTILIZATORULUI ---
+// --- MIDDLEWARE UTILIZATOR ---
 app.use((req, res, next) => {
-    res.locals.isLoggedIn = !!req.session.userId; 
+    res.locals.isLoggedIn = !!req.session.userId;
     res.locals.isGuest = !!req.session.isGuest && !req.session.userId;
     next();
 });
@@ -65,7 +59,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phoneNumber: { type: String, default: '' },
-    cars: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Car' }] 
+    cars: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Car' }]
 });
 const User = mongoose.model('User', userSchema);
 
@@ -73,19 +67,18 @@ const carSchema = new mongoose.Schema({
     plateNumber: { type: String, required: true, unique: true },
     make: { type: String, required: true },
     model: { type: String, required: true },
-    imageUrls: [{ type: String, required: true }], 
+    imageUrls: [{ type: String, required: true }],
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    addedDate: { type: Date, default: Date.now } 
+    addedDate: { type: Date, default: Date.now }
 });
 const Car = mongoose.model('Car', carSchema);
 
-
 // ==========================================================
-// --- 🖥️ RUTE GET (AFIȘARE PAGINI) ---
+// --- 🖥️ RUTE GET ---
 // ==========================================================
 
 app.get('/', (req, res) => {
-    res.render('home', { title: 'Car-App - Acasă' }); 
+    res.render('home', { title: 'Car-App - Acasă' });
 });
 
 app.get('/login', (req, res) => {
@@ -101,49 +94,50 @@ app.get('/add-car', (req, res) => {
     res.render('add-car', { title: 'Adaugă mașină', error: null });
 });
 
-app.get('/profile', (req, res) => {
+app.get('/profile', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
-    res.render('profile', { title: 'Profilul Meu' }); 
+    try {
+        // Găsim utilizatorul și populăm lista de mașini (aducem detaliile mașinilor)
+        const user = await User.findById(req.session.userId).populate('cars');
+        res.render('profile', { title: 'Profilul Meu', user: user, cars: user.cars });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
 });
 
 app.get('/chat', (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
-    // Generăm date simple pentru chat
-    res.render('chat', { 
-        title: 'Chat', 
-        userId: req.session.userId, 
-        username: 'User_' + req.session.userId.substring(0, 4), 
-        roomId: 'defaultCarRoom' 
-    }); 
+    res.render('chat', {
+        title: 'Chat',
+        userId: req.session.userId,
+        username: 'User_' + req.session.userId.substring(0, 4),
+        roomId: 'defaultCarRoom'
+    });
 });
 
-
 // ==========================================================
-// --- 🔍 RUTA API PENTRU CĂUTARE DINAMICĂ ---
+// --- 🔍 API SEARCH ---
 // ==========================================================
 
 app.get('/api/search', async (req, res) => {
-    const { plate } = req.query; 
+    const { plate } = req.query;
     if (!plate) return res.json([]);
 
     try {
-        // Căutare Regex, care începe cu șirul introdus
-        const cars = await Car.find({ 
-            plateNumber: { $regex: '^' + plate, $options: 'i' } 
+        const cars = await Car.find({
+            plateNumber: { $regex: '^' + plate, $options: 'i' }
         })
         .limit(10)
-        .select('plateNumber make model'); 
-
+        .select('plateNumber make model');
         res.json(cars);
-
     } catch (error) {
         res.status(500).json([]);
     }
 });
 
-
 // ==========================================================
-// --- 🔐 RUTE POST (AUTENTIFICARE) ---
+// --- 🔐 AUTH ---
 // ==========================================================
 
 app.post('/register', async (req, res) => {
@@ -151,11 +145,11 @@ app.post('/register', async (req, res) => {
     if (password !== confirmPassword) return res.render('register', { error: 'Parolele nu se potrivesc.', title: 'Creează Cont' });
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10); 
+        const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ fullName, email, password: hashedPassword });
         await newUser.save();
-        req.session.userId = newUser._id; 
-        res.redirect('/'); 
+        req.session.userId = newUser._id;
+        res.redirect('/');
     } catch (error) {
         if (error.code === 11000) return res.render('register', { error: 'Acest email este deja înregistrat.', title: 'Creează Cont' });
         res.render('register', { error: 'A apărut o eroare la înregistrare.', title: 'Creează Cont' });
@@ -169,8 +163,8 @@ app.post('/login', async (req, res) => {
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.render('login', { error: 'Email sau parolă incorectă.', email, title: 'Login Car-App' });
         }
-        req.session.userId = user._id; 
-        req.session.isGuest = false; 
+        req.session.userId = user._id;
+        req.session.isGuest = false;
         res.redirect('/');
     } catch (error) {
         res.render('login', { error: 'A apărut o eroare de server.', title: 'Login Car-App' });
@@ -179,7 +173,7 @@ app.post('/login', async (req, res) => {
 
 app.post('/guest-login', (req, res) => {
     req.session.userId = null;
-    req.session.isGuest = true; 
+    req.session.isGuest = true;
     res.redirect('/');
 });
 
@@ -189,9 +183,8 @@ app.post('/logout', (req, res) => {
     });
 });
 
-
 // ==========================================================
-// --- ➕ RUTA POST ADĂUGARE MAȘINĂ (Upload și DB Save) ---
+// --- ➕ ADOUGĂ MAȘINĂ (CU IMGBB) ---
 // ==========================================================
 
 app.post('/add-car', upload.single('carImage'), async (req, res) => {
@@ -203,50 +196,54 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
     if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
 
     try {
-        // 1. Upload la Cloudinary
-        const uploadResult = await cloudinary.uploader.upload(
-            `data:image/jpeg;base64,${file.buffer.toString('base64')}`, 
-            { 
-                folder: 'car-app-images', 
-                public_id: `${plateNumber.replace(/\s/g, '')}_${Date.now()}`
-            }
-        );
+        // 1. Pregătim imaginea pentru ImgBB (Base64)
+        const base64Image = file.buffer.toString('base64');
+        const formData = new FormData();
+        formData.append('image', base64Image);
 
-        // 2. Salvarea mașinii în baza de date
+        // 2. Upload la ImgBB
+        // ATENȚIE: Trebuie să ai variabila IMGBB_API_KEY în Render!
+        const imgbbResponse = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, formData, {
+            headers: {
+                ...formData.getHeaders()
+            }
+        });
+
+        const imageUrl = imgbbResponse.data.data.url;
+
+        // 3. Salvare în MongoDB
         const newCar = new Car({
             plateNumber: plateNumber.toUpperCase().trim(),
             make,
             model,
-            imageUrls: [uploadResult.secure_url], 
-            owner: req.session.userId 
+            imageUrls: [imageUrl],
+            owner: req.session.userId
         });
 
         await newCar.save();
 
-        // 3. Actualizarea listei de mașini a utilizatorului
+        // 4. Actualizare User
         await User.findByIdAndUpdate(req.session.userId, { $push: { cars: newCar._id } });
 
-        res.redirect('/profile'); 
+        res.redirect('/profile');
 
     } catch (error) {
+        console.error('Eroare la upload:', error.response ? error.response.data : error.message);
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
     }
 });
 
-
 // ==========================================================
-// --- 💬 LOGICA CHAT (SOCKET.IO) ---
+// --- 💬 CHAT ---
 // ==========================================================
 
 io.on('connection', (socket) => {
     socket.on('joinRoom', (roomId) => {
         socket.join(roomId);
     });
-
     socket.on('chatMessage', (data) => {
-        // Trimite mesajul tuturor din camera respectivă
         io.to(data.roomId).emit('message', {
             text: data.message,
             sender: data.senderName,
@@ -255,11 +252,6 @@ io.on('connection', (socket) => {
     });
 });
 
-
-// ==========================================================
-// --- START SERVER (MODIFICAT PENTRU SOCKET.IO) ---
-// ==========================================================
-
-server.listen(PORT, () => { 
+server.listen(PORT, () => {
     console.log(`Serverul rulează pe portul http://localhost:${PORT}`);
 });
