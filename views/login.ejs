@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="auth-container">
+        <h1>Login</h1>
+        <% if (error) { %>
+            <div class="error-message"><%= error %></div>
+        <% } %>
+
+        <form action="/login" method="POST">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Parolă" required>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+
+        <p class="separator">sau</p>
+
+        <form action="/guest-login" method="POST">
+            <button type="submit" class="btn btn-secondary">Continuă ca Invitat</button>
+        </form>
+
+        <div class="register-link">
+            Nu ai cont? <a href="/register">Creează unul!</a>
+        </div>
+    </div>
+</body>
+</html>
