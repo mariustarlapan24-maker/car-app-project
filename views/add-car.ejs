@@ -46,7 +46,7 @@
                         <option value="Mercedes">Mercedes-Benz</option>
                         <option value="BMW">BMW</option>
                         <option value="Audi">Audi</option>
-                    </select>
+                        </select>
                 </div>
                 <div class="select-group mt-10">
                     <i class="fas fa-car-crash"></i>
@@ -55,13 +55,13 @@
                         <option value="E-Class">E-Class</option>
                         <option value="X5">X5</option>
                         <option value="A6">A6</option>
-                    </select>
+                        </select>
                 </div>
             </div>
 
             <div class="form-section images-section">
-                <p class="section-title">Imagini mașină <span class="image-count">(0/1)</span></p>
-                <label for="imageUpload" class="image-upload-area">
+                <p class="section-title">Imagini mașină <span class="image-count" id="imageCount">(0/1)</span></p>
+                <label for="imageUpload" class="image-upload-area" id="imageUploadArea">
                     <i class="fas fa-plus-circle"></i>
                     <p>Adaugă până la 1 imagine</p>
                     <input type="file" id="imageUpload" name="carImage" accept="image/*" required hidden>
@@ -72,6 +72,54 @@
         </form>
     </div>
 
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const imageUploadArea = document.getElementById('imageUploadArea');
+        const imageCountSpan = document.getElementById('imageCount');
+        const maxFiles = 1;
+
+        // Ascultă când se selectează un fișier în input-ul ascuns
+        imageUpload.addEventListener('change', (e) => {
+            const files = e.target.files;
+            
+            // Această logică se asigură că imaginea este selectată și afișată
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    // Curățăm zona de upload și afișăm previzualizarea
+                    imageUploadArea.innerHTML = '';
+                    
+                    const previewImage = document.createElement('img');
+                    previewImage.src = e.target.result;
+                    previewImage.classList.add('image-preview');
+
+                    imageUploadArea.appendChild(previewImage);
+                    imageCountSpan.textContent = `(1/${maxFiles})`;
+                    
+                    // Adăugăm o clasă pentru stilizare (opțional, dar recomandat)
+                    imageUploadArea.classList.add('has-preview');
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                // Dacă nu a fost selectat niciun fișier, revenim la starea inițială
+                imageUploadArea.innerHTML = '<i class="fas fa-plus-circle"></i><p>Adaugă până la 1 imagine</p>';
+                imageCountSpan.textContent = `(0/${maxFiles})`;
+                imageUploadArea.classList.remove('has-preview');
+            }
+        });
+
+        // Opțional: Adăugăm o funcționalitate de bază pentru a deschide selectorul de fișiere
+        // când se face click pe zona vizibilă (doar dacă nu are deja o imagine).
+        imageUploadArea.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT' && !imageUploadArea.classList.contains('has-preview')) {
+                 imageUpload.click();
+            }
+        });
+    </script>
+    
     <footer class="footer-nav">
         <a href="/" class="nav-item"><span class="nav-icon">🏠</span> Acasă</a>
         <a href="/add-car" class="nav-item active"><div class="nav-plus-btn active">+</div></a>
