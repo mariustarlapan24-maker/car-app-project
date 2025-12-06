@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 const carSchema = new mongoose.Schema({
-    plateNumber: { type: String, required: true, unique: true },
+    plateNumber: { type: String, required: true, unique: true }, // <-- DOAR AICI UNIQUE: TRUE
     make: { type: String, required: true },
     model: { type: String, required: true },
     imageUrls: [{ type: String, required: true }],
