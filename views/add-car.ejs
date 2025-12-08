@@ -1,130 +1,44 @@
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
-    <header class="add-car-header">
-        <a href="/" class="back-arrow">←</a>
-        <h1>Adaugă mașină</h1>
-        <button type="submit" form="addCarForm" class="btn-save-top"><i class="fas fa-save"></i> Save</button>
-    </header>
+<%- include('partials/header', { title: 'Adaugă mașină' }) %>
 
-    <div class="form-container">
-        <% if (error) { %>
-            <div class="error-message-banner"><%= error %></div>
-        <% } %>
+<div class="container mt-4">
+    <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+    <% } %>
 
-        <form id="addCarForm" action="/add-car" method="POST" enctype="multipart/form-data">
-            
-            <div class="form-section number-plate-section">
-                <div class="plate-input-group">
-                    <div class="md-plate-tag">
-                        <img src="/img/drapel-md.png" alt="MD Flag"> MD
-                    </div>
-                    <input 
-                        type="text" 
-                        name="plateNumber" 
-                        placeholder="Număr de Înmatriculare" 
-                        required 
-                        maxlength="8"
-                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');"
-                    >
-                </div>
-            </div>
+    <form id="addCarForm" action="/add-car" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Număr de Înmatriculare</label>
+            <input type="text" name="plateNumber" class="form-control" placeholder="ABC 123" required maxlength="8" 
+            oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');">
+        </div>
 
-            <div class="form-section brand-section">
-                <p class="section-title">Marca & Model</p>
-                <div class="select-group">
-                    <i class="fas fa-car-side"></i>
-                    <select name="make" required>
-                        <option value="">Selectează marca</option>
-                        <option value="Mercedes">Mercedes-Benz</option>
-                        <option value="BMW">BMW</option>
-                        <option value="Audi">Audi</option>
-                        </select>
-                </div>
-                <div class="select-group mt-10">
-                    <i class="fas fa-car-crash"></i>
-                    <select name="model" required>
-                        <option value="">Selectează modelul</option>
-                        <option value="E-Class">E-Class</option>
-                        <option value="X5">X5</option>
-                        <option value="A6">A6</option>
-                        </select>
-                </div>
-            </div>
+        <div class="mb-3">
+            <label class="form-label">Marca</label>
+            <select name="make" class="form-select" required>
+                <option value="">Selectează marca</option>
+                <option value="Mercedes">Mercedes-Benz</option>
+                <option value="BMW">BMW</option>
+                <option value="Audi">Audi</option>
+            </select>
+        </div>
 
-            <div class="form-section images-section">
-                <p class="section-title">Imagini mașină <span class="image-count" id="imageCount">(0/1)</span></p>
-                <label for="imageUpload" class="image-upload-area" id="imageUploadArea">
-                    <i class="fas fa-plus-circle"></i>
-                    <p>Adaugă până la 1 imagine</p>
-                    <input type="file" id="imageUpload" name="carImage" accept="image/*" required hidden>
-                </label>
-            </div>
-            
-            <div class="spacer-bottom"></div>
-        </form>
-    </div>
+        <div class="mb-3">
+            <label class="form-label">Model</label>
+            <select name="model" class="form-select" required>
+                <option value="">Selectează modelul</option>
+                <option value="E-Class">E-Class</option>
+                <option value="X5">X5</option>
+                <option value="A6">A6</option>
+            </select>
+        </div>
 
-    <script>
-        const imageUpload = document.getElementById('imageUpload');
-        const imageUploadArea = document.getElementById('imageUploadArea');
-        const imageCountSpan = document.getElementById('imageCount');
-        const maxFiles = 1;
+        <div class="mb-3">
+            <label class="form-label">Imagine Mașină</label>
+            <input type="file" name="carImage" class="form-control" accept="image/*" required>
+        </div>
 
-        // Ascultă când se selectează un fișier în input-ul ascuns
-        imageUpload.addEventListener('change', (e) => {
-            const files = e.target.files;
-            
-            // Această logică se asigură că imaginea este selectată și afișată
-            if (files.length > 0) {
-                const file = files[0];
-                const reader = new FileReader();
+        <button type="submit" class="btn btn-primary">Salvează Mașina</button>
+    </form>
+</div>
 
-                reader.onload = function(e) {
-                    // Curățăm zona de upload și afișăm previzualizarea
-                    imageUploadArea.innerHTML = '';
-                    
-                    const previewImage = document.createElement('img');
-                    previewImage.src = e.target.result;
-                    previewImage.classList.add('image-preview');
-
-                    imageUploadArea.appendChild(previewImage);
-                    imageCountSpan.textContent = `(1/${maxFiles})`;
-                    
-                    // Adăugăm o clasă pentru stilizare (opțional, dar recomandat)
-                    imageUploadArea.classList.add('has-preview');
-                };
-                
-                reader.readAsDataURL(file);
-            } else {
-                // Dacă nu a fost selectat niciun fișier, revenim la starea inițială
-                imageUploadArea.innerHTML = '<i class="fas fa-plus-circle"></i><p>Adaugă până la 1 imagine</p>';
-                imageCountSpan.textContent = `(0/${maxFiles})`;
-                imageUploadArea.classList.remove('has-preview');
-            }
-        });
-
-        // Opțional: Adăugăm o funcționalitate de bază pentru a deschide selectorul de fișiere
-        // când se face click pe zona vizibilă (doar dacă nu are deja o imagine).
-        imageUploadArea.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'INPUT' && !imageUploadArea.classList.contains('has-preview')) {
-                 imageUpload.click();
-            }
-        });
-    </script>
-    
-    <footer class="footer-nav">
-        <a href="/" class="nav-item"><span class="nav-icon">🏠</span> Acasă</a>
-        <a href="/add-car" class="nav-item active"><div class="nav-plus-btn active">+</div></a>
-        <a href="/chat" class="nav-item"><span class="nav-icon">💬</span> Chat</a>
-        <a href="/profile" class="nav-item"><span class="nav-icon">👤</span> Profil</a>
-    </footer>
-</body>
-</html>
+<%- include('partials/footer') %>

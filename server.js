@@ -7,7 +7,9 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const ImageKit = require('imagekit'); // NOU: Pachetul ImageKit
+const ImageKit = require('imagekit');
+// 🛑 CORECTAT: Importăm magazinul de sesiuni MongoDB
+const MongoDBStore = require('connect-mongodb-session')(session); 
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +17,6 @@ const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
 // --- CONFIGURARE IMAGEKIT ---
-// Folosim chei de mediu din Render!
 const imagekit = new ImageKit({
     publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
     privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
@@ -42,12 +43,18 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- SESIUNI ---
+// 🛑 CORECTAT: SESIUNI PERSISTENTE (Soluție pentru MemoryStore Warning)
+const store = new MongoDBStore({
+    uri: DB_URI, 
+    collection: 'sessions', // Colecția unde vor fi stocate sesiunile
+});
+
 app.use(session({
     secret: 'CHIE_SECRETA_SUPER_COMPLEXA_2025',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    store: store, // ⬅️ FOLOSIM MongoDBStore AICI!
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 ore
 }));
 
 // --- MIDDLEWARE UTILIZATOR ---
@@ -71,7 +78,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 const carSchema = new mongoose.Schema({
-    plateNumber: { type: String, required: true, unique: true }, 
+    plateNumber: { type: String, required: true, unique: true },
     make: { type: String, required: true },
     model: { type: String, required: true },
     imageUrls: [{ type: String, required: true }],
@@ -103,7 +110,7 @@ app.get('/profile', async (req, res) => {
         const user = await User.findById(req.session.userId).populate('cars');
         res.render('profile', { title: 'Profilul Meu', user: user, cars: user.cars });
     } catch (err) {
-        console.error(err);
+        console.error("Eroare la profil:", err);
         res.redirect('/');
     }
 });
@@ -153,6 +160,7 @@ app.post('/login', async (req, res) => {
         req.session.isGuest = false;
         res.redirect('/');
     } catch (error) {
+        console.error("Eroare la login:", error);
         res.render('login', { error: 'A apărut o eroare de server.', title: 'Login Car-App' });
     }
 });
@@ -177,13 +185,12 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
     const { plateNumber, make, model } = req.body;
     const file = req.file;
 
-    // Aici verificăm dacă formularul de frontend a trimis fișierul
-    if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine. (Verificați enctype în add-car.ejs)' });
+    if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
 
     try {
         // 1. Upload la ImageKit
         const uploadResponse = await imagekit.upload({
-            file: file.buffer.toString('base64'), // Trimitem buffer-ul ca base64
+            file: file.buffer.toString('base64'), 
             fileName: `${Date.now()}-${file.originalname}`,
             folder: 'car-app-uploads' 
         });
@@ -214,9 +221,9 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
         
-        // Verificăm dacă eroarea este de la ImageKit (de obicei cod 4xx sau mesaj de autentificare)
+        // Verificăm dacă eroarea este de la ImageKit (de obicei cod 401/403)
         if (error.statusCode === 401 || (error.message && error.message.includes('Authentication failed'))) {
-             errorMessage = `Eroare de autentificare ImageKit (Cod ${error.statusCode || 'Necunoscut'}). Vă rog să verificați cheile în Render!`;
+             errorMessage = `Eroare de autentificare ImageKit (Cod ${error.statusCode || 'Necunoscut'}). Vă rog să verificați cheile IMAGEKIT în Render!`;
         }
 
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
@@ -240,6 +247,7 @@ io.on('connection', (socket) => {
     });
 });
 
+// --- SERVER START ---
 server.listen(PORT, () => {
     console.log(`Serverul rulează pe portul http://localhost:${PORT}`);
 });

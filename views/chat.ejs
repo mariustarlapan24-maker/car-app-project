@@ -1,73 +1,46 @@
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link rel="stylesheet" href="/css/styles.css">
-</head>
-<body>
-    <header class="chat-header">
-        <a href="/" class="back-arrow">←</a>
-        <h1>Chat (Mașina: <%= roomId %>)</h1>
-        <div class="header-icons">...</div>
-    </header>
+<%- include('partials/header', { title: 'Chat' }) %>
 
-    <div class="chat-container">
-        <div id="messages" class="messages-area">
-            <div class="system-message">V-ați alăturat chat-ului.</div>
-        </div>
-
-        <form id="chatForm" class="input-message-area">
-            <input type="text" id="messageInput" placeholder="Scrie un mesaj..." required>
-            <button type="submit">Trimite</button>
-        </form>
+<div class="container mt-4">
+    <h4>Chat (Mașina: <%= roomId %>)</h4>
+    <div id="messages" class="border rounded p-3 mb-3" style="height:300px; overflow-y:auto;">
+        <div class="text-muted">V-ați alăturat chat-ului.</div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const userId = '<%= userId %>';
-        const username = '<%= username %>';
-        const roomId = '<%= roomId %>';
+    <form id="chatForm" class="d-flex">
+        <input type="text" id="messageInput" class="form-control me-2" placeholder="Scrie un mesaj..." required>
+        <button class="btn btn-primary" type="submit">Trimite</button>
+    </form>
+</div>
 
-        const socket = io();
-        socket.emit('joinRoom', roomId);
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const userId = '<%= userId %>';
+    const username = '<%= username %>';
+    const roomId = '<%= roomId %>';
 
-        const chatForm = document.getElementById('chatForm');
-        const messageInput = document.getElementById('messageInput');
-        const messagesArea = document.getElementById('messages');
+    const socket = io();
+    socket.emit('joinRoom', roomId);
 
-        // Trimite Mesaj
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = messageInput.value;
-            if (message) {
-                socket.emit('chatMessage', { roomId, message, senderId: userId, senderName: username });
-                messageInput.value = '';
-            }
-        });
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const messagesArea = document.getElementById('messages');
 
-        // Primește Mesaj
-        socket.on('message', (data) => {
-            const messageElement = document.createElement('div');
-            // Aliniere stânga/dreapta
-            messageElement.classList.add('chat-message', data.sender === username ? 'own-message' : 'other-message');
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const message = messageInput.value;
+        if (message) {
+            socket.emit('chatMessage', { roomId, message, senderId: userId, senderName: username });
+            messageInput.value = '';
+        }
+    });
 
-            messageElement.innerHTML = `
-                <span class="sender-name">${data.sender}:</span>
-                <span class="message-text">${data.text}</span>
-                <span class="message-time">${data.time}</span>
-            `;
-            messagesArea.appendChild(messageElement);
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-        });
-    </script>
-    
-    <footer class="footer-nav">
-        <a href="/" class="nav-item"><span class="nav-icon">🏠</span> Acasă</a>
-        <a href="/add-car" class="nav-item"><div class="nav-plus-btn">+</div></a>
-        <a href="/chat" class="nav-item active"><span class="nav-icon">💬</span> Chat</a>
-        <a href="/profile" class="nav-item"><span class="nav-icon">👤</span> Profil</a>
-    </footer>
-</body>
-</html>
+    socket.on('message', (data) => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('mb-2');
+        messageElement.innerHTML = `<strong>${data.sender}:</strong> ${data.text} <small class="text-muted">${data.time}</small>`;
+        messagesArea.appendChild(messageElement);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    });
+</script>
+
+<%- include('partials/footer') %>

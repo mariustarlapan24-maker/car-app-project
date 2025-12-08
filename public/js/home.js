@@ -1,72 +1,48 @@
-// public/js/home.js
-
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('plateSearchInput');
-    const resultsContainer = document.getElementById('searchResults');
-    const clearButton = document.getElementById('clearSearch');
+    const searchResults = document.getElementById('searchResults');
+    const clearBtn = document.getElementById('clearSearch');
 
-    // --- 1. Logica de Validare a Inputului ---
-    searchInput.addEventListener('input', (e) => {
-        let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        
-        // Aplică formatul LLL CCC
-        if (value.length > 3 && !value.includes(' ')) {
-            value = value.substring(0, 3) + ' ' + value.substring(3);
-        }
-        if (value.length > 8) { 
-            value = value.substring(0, 8);
-        }
+    let timeout = null;
 
-        e.target.value = value;
-        clearButton.style.display = value.length > 0 ? 'block' : 'none';
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim();
 
-        if (value.length > 2) {
-            handleSearch(value);
-        } else {
-            resultsContainer.innerHTML = '';
-        }
-    });
-    
-    // Butonul X (Clear)
-    clearButton.addEventListener('click', () => {
-        searchInput.value = '';
-        resultsContainer.innerHTML = '';
-        clearButton.style.display = 'none';
-        searchInput.focus();
-    });
-
-    // --- 2. Funcția AJAX de Căutare ---
-    async function handleSearch(query) {
-        const plate = query.trim().replace(/\s/g, ''); 
-
-        try {
-            const response = await fetch(`/api/search?plate=${plate}`);
-            const results = await response.json();
-            renderResults(results);
-        } catch (error) {
-            resultsContainer.innerHTML = `<div class="error-message">A apărut o eroare la server.</div>`;
-        }
-    }
-
-    // --- 3. Funcția de Randare a Rezultatelor ---
-    function renderResults(cars) {
-        if (cars.length === 0) {
-            resultsContainer.innerHTML = `<div class="no-results-message">Nicio mașină găsită.</div>`;
+        if (query.length === 0) {
+            searchResults.innerHTML = '';
+            clearBtn.style.display = 'none';
             return;
         }
 
-        resultsContainer.innerHTML = cars.map(car => `
-            <a href="/cars/${car._id}" class="car-result-card">
-                <div class="result-info">
-                    <span class="md-tag">MD</span>
-                    <span class="plate-number">${car.plateNumber}</span>
-                    <span class="car-details">${car.make} ${car.model}</span>
-                </div>
-                <div class="result-status">
-                    VÂNZARE
-                    <span class="arrow">→</span>
-                </div>
-            </a>
-        `).join('');
-    }
+        clearBtn.style.display = 'inline-block';
+
+        clearTimeout(timeout);
+        timeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/search?plate=${query}`);
+                const cars = await res.json();
+
+                searchResults.innerHTML = '';
+                if (cars.length === 0) {
+                    searchResults.innerHTML = `<div class="list-group-item">Nu s-au găsit rezultate.</div>`;
+                    return;
+                }
+
+                cars.forEach(car => {
+                    const item = document.createElement('div');
+                    item.classList.add('list-group-item');
+                    item.textContent = `${car.plateNumber} - ${car.make} ${car.model}`;
+                    searchResults.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Eroare la căutare:', error);
+            }
+        }, 300);
+    });
+
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchResults.innerHTML = '';
+        clearBtn.style.display = 'none';
+    });
 });
