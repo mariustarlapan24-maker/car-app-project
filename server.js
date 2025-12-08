@@ -8,7 +8,6 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const ImageKit = require('imagekit');
-// 🛑 CORECTAT: Importăm magazinul de sesiuni MongoDB
 const MongoDBStore = require('connect-mongodb-session')(session); 
 
 const app = express();
@@ -16,11 +15,12 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
-// --- CONFIGURARE IMAGEKIT (Folosind nume scurte pentru variabilele de mediu) ---
+// --- CONFIGURARE IMAGEKIT (Folosind numele oficiale) ---
 const imagekit = new ImageKit({
-    publicKey: process.env.IK_PUBLIC, // Folosim noul nume scurt
-    privateKey: process.env.IK_PRIVATE, // Folosim noul nume scurt
-    urlEndpoint: process.env.IK_ENDPOINT // Folosim noul nume scurt
+    // VOM FOLOSI NUME CARE SE POTRIVESC CU CELE STANDARD CERUTE DE LIBRARY
+    publicKey: process.env.IMAGEKIT_API_KEY, 
+    privateKey: process.env.IMAGEKIT_API_SECRET, 
+    urlEndpoint: process.env.IK_ENDPOINT 
 });
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
@@ -43,7 +43,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🛑 CORECTAT: SESIUNI PERSISTENTE
+// 🛑 SESIUNI PERSISTENTE
 const store = new MongoDBStore({
     uri: DB_URI, 
     collection: 'sessions', 
@@ -214,16 +214,14 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         res.redirect('/profile');
 
     } catch (error) {
-        // Logare detaliată a erorii pentru diagnosticare
         console.error('--- EROARE CRITICĂ UPLOAD IMAGEKIT ---');
         console.error(error); 
         
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
         
-        // VOM AFIȘA O ERROARE CLARĂ DACĂ CHEILE IMAGEKIT SUNT INVALIDE
         if (error.statusCode === 401 || (error.message && error.message.includes('Authentication failed'))) {
-             errorMessage = `Eroare de autentificare ImageKit (Cod ${error.statusCode || 'Necunoscut'}). Vă rog să verificați CHEILE în Render!`;
+             errorMessage = `Eroare de autentificare ImageKit! Verificați cheile API_KEY și API_SECRET în Render!`;
         }
 
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
