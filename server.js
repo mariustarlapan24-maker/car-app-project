@@ -16,11 +16,11 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
-// --- CONFIGURARE IMAGEKIT ---
+// --- CONFIGURARE IMAGEKIT (Folosind nume scurte pentru variabilele de mediu) ---
 const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT 
+    publicKey: process.env.IK_PUBLIC, // Folosim noul nume scurt
+    privateKey: process.env.IK_PRIVATE, // Folosim noul nume scurt
+    urlEndpoint: process.env.IK_ENDPOINT // Folosim noul nume scurt
 });
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
@@ -43,21 +43,21 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🛑 CORECTAT: SESIUNI PERSISTENTE (Soluție pentru MemoryStore Warning)
+// 🛑 CORECTAT: SESIUNI PERSISTENTE
 const store = new MongoDBStore({
     uri: DB_URI, 
-    collection: 'sessions', // Colecția unde vor fi stocate sesiunile
+    collection: 'sessions', 
 });
 
 app.use(session({
     secret: 'CHIE_SECRETA_SUPER_COMPLEXA_2025',
     resave: false,
     saveUninitialized: false,
-    store: store, // ⬅️ FOLOSIM MongoDBStore AICI!
+    store: store, 
     cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 ore
 }));
 
-// --- MIDDLEWARE UTILIZATOR ---
+// --- MIDDLEWARE UTILIZATOR (Setează variabilele locale EJS) ---
 app.use((req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
     res.locals.isGuest = !!req.session.isGuest && !req.session.userId;
@@ -221,9 +221,9 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
         
-        // Verificăm dacă eroarea este de la ImageKit (de obicei cod 401/403)
+        // VOM AFIȘA O ERROARE CLARĂ DACĂ CHEILE IMAGEKIT SUNT INVALIDE
         if (error.statusCode === 401 || (error.message && error.message.includes('Authentication failed'))) {
-             errorMessage = `Eroare de autentificare ImageKit (Cod ${error.statusCode || 'Necunoscut'}). Vă rog să verificați cheile IMAGEKIT în Render!`;
+             errorMessage = `Eroare de autentificare ImageKit (Cod ${error.statusCode || 'Necunoscut'}). Vă rog să verificați CHEILE în Render!`;
         }
 
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
