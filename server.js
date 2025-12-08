@@ -15,12 +15,19 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
-// --- CONFIGURARE IMAGEKIT (Folosind numele oficiale) ---
+// --- VERIFICARE IMAGEKIT ÎNAINTE DE INIȚIALIZARE ---
+console.log('--- Verificare Variabile ImageKit (Render) ---');
+console.log(`API Key prezent: ${!!process.env.IMAGEKIT_API_KEY}`);
+console.log(`API Secret prezent: ${!!process.env.IMAGEKIT_API_SECRET}`);
+console.log(`URL Endpoint prezent: ${!!process.env.IMAGEKIT_URL_ENDPOINT}`);
+console.log('-------------------------------------------');
+
+// --- CONFIGURARE IMAGEKIT (Folosind nume standard) ---
 const imagekit = new ImageKit({
-    // VOM FOLOSI NUME CARE SE POTRIVESC CU CELE STANDARD CERUTE DE LIBRARY
+    // Aceste nume trebuie să se potrivească exact cu cele din panoul Render
     publicKey: process.env.IMAGEKIT_API_KEY, 
     privateKey: process.env.IMAGEKIT_API_SECRET, 
-    urlEndpoint: process.env.IK_ENDPOINT 
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT 
 });
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
