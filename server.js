@@ -20,13 +20,15 @@ console.log("=== IMAGEKIT ENV DEBUG ===");
 console.log("publicKey length:", process.env.IMAGEKIT_API_KEY?.length);
 console.log("privateKey length:", process.env.IMAGEKIT_API_SECRET?.length);
 console.log("urlEndpoint:", process.env.IMAGEKIT_URL_ENDPOINT);
+console.log("IMAGEKIT_ID =", process.env.IMAGEKIT_ID);
 console.log("===========================");
 
 // --- CONFIGURARE IMAGEKIT (cu debug) ---
 const imagekit = new ImageKit({
     publicKey: process.env.IMAGEKIT_API_KEY,
     privateKey: process.env.IMAGEKIT_API_SECRET,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+    imageKitId: process.env.IMAGEKIT_ID
 });
 
 console.log('--- ImageKit initialized with ---');
