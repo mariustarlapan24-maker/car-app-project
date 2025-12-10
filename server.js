@@ -17,17 +17,21 @@ const PORT = process.env.PORT || 3000;
 
 // DEBUG ENV — vezi dacă Render trimite variabilele (Lungimile corecte: 35 și 36)
 console.log("=== IMAGEKIT ENV DEBUG ===");
-console.log("publicKey length:", process.env.IMAGEKIT_API_KEY?.length);
-console.log("privateKey length:", process.env.IMAGEKIT_API_SECRET?.length);
+console.log("publicKey length:", process.env.IMAGEKIT_PUBLIC_KEY?.length); // CORECTAT
+console.log("privateKey length:", process.env.IMAGEKIT_PRIVATE_KEY?.length); // CORECTAT
 console.log("urlEndpoint:", process.env.IMAGEKIT_URL_ENDPOINT);
 console.log("===========================");
 
 // --- CONFIGURARE IMAGEKIT (cu debug) ---
 // Notă: Cheile restricționate NOUĂ vor fi folosite aici!
 const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_API_KEY,
-    privateKey: process.env.IMAGEKIT_API_SECRET,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+    // Acestea sunt cheile tale (PUBLIC_KEY și PRIVATE_KEY)
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY, 
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY, 
+    // Acesta este URL-ul complet (https://ik.imagekit.io/v51tzf7sl)
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+    // ID-ul contului, obligatoriu dacă nu este inclus în urlEndpoint
+    imageKitId: process.env.IMAGEKIT_ID // Reintroducem ca variabilă suplimentară
 });
 
 console.log('--- ImageKit initialized with ---');
