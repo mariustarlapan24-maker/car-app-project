@@ -19,7 +19,8 @@ const PORT = process.env.PORT || 3000;
 
 // --- DATE ESENȚIALE PENTRU UPLOAD DIRECT (FOLOSIND VARIABILELE TALE DIN RENDER) ---
 // Citim cheile folosind denumirile tale din Render: PRIVATE_KEY și URL_ENDPOINT
-const IK_URL_ENDPOINT = process.env.IMAGEKIT_URL_ENDPOINT;
+//const IK_URL_ENDPOINT = process.env.IMAGEKIT_URL_ENDPOINT;
+const IK_URL_ENDPOINT = 'https://upload.imagekit.io'; // <-- URL-ul corect de upload!
 const IK_SECRET = process.env.IMAGEKIT_PRIVATE_KEY; // <-- CHEIA PRIVATĂ
 const IK_PUBLIC = process.env.IMAGEKIT_PUBLIC_KEY;   // <-- CHEIA PUBLICĂ
 
@@ -201,7 +202,8 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         formData.append('folder', 'car-app-uploads');
         
         // 4. Încărcarea folosind Fetch API (care ocolește SDK-ul problematic)
-        const uploadUrl = `${IK_URL_ENDPOINT}/api/v1/files/upload`;
+        //const uploadUrl = `${IK_URL_ENDPOINT}/api/v1/files/upload`;
+        const uploadUrl = `${IK_URL_ENDPOINT}/api/v1/files/upload`; // Lăsăm la fel, dar IK_URL_ENDPOINT s-a schimbat!
         
         const uploadResponse = await fetch(uploadUrl, {
             method: 'POST',
