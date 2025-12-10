@@ -20,7 +20,6 @@ console.log("=== IMAGEKIT ENV DEBUG ===");
 console.log("publicKey length:", process.env.IMAGEKIT_API_KEY?.length);
 console.log("privateKey length:", process.env.IMAGEKIT_API_SECRET?.length);
 console.log("urlEndpoint:", process.env.IMAGEKIT_URL_ENDPOINT);
-console.log("IMAGEKIT_ID:", process.env.IMAGEKIT_ID);
 console.log("===========================");
 
 // --- CONFIGURARE IMAGEKIT (cu debug) ---
@@ -28,9 +27,7 @@ console.log("===========================");
 const imagekit = new ImageKit({
     publicKey: process.env.IMAGEKIT_API_KEY,
     privateKey: process.env.IMAGEKIT_API_SECRET,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
-    // Adăugăm ID-ul ca parametru suplimentar, deși de obicei nu e obligatoriu
-    imageKitId: process.env.IMAGEKIT_ID 
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
 });
 
 console.log('--- ImageKit initialized with ---');
