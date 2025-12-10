@@ -7,7 +7,9 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const ImageKit = require('imagekit');
+// const ImageKit = require('imagekit'); // Nu mai folosim SDK-ul pentru a evita eroarea
+const fetch = require('node-fetch'); // Adăugăm fetch pentru request-ul direct
+const { URLSearchParams } = require('url'); // Necesar pentru a forma datele de upload
 const MongoDBStore = require('connect-mongodb-session')(session); 
 
 const app = express();
@@ -15,30 +17,18 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
-// DEBUG ENV — vezi dacă Render trimite variabilele (Lungimile corecte: 35 și 36)
-console.log("=== IMAGEKIT ENV DEBUG ===");
-console.log("publicKey length:", process.env.IMAGEKIT_PUBLIC_KEY?.length); // CORECTAT
-console.log("privateKey length:", process.env.IMAGEKIT_PRIVATE_KEY?.length); // CORECTAT
-console.log("urlEndpoint:", process.env.IMAGEKIT_URL_ENDPOINT);
+// --- DATE ESENȚIALE PENTRU UPLOAD DIRECT (FOLOSIND VARIABILELE TALE DIN RENDER) ---
+// Citim cheile folosind denumirile tale din Render: PRIVATE_KEY și URL_ENDPOINT
+const IK_URL_ENDPOINT = process.env.IMAGEKIT_URL_ENDPOINT;
+const IK_SECRET = process.env.IMAGEKIT_PRIVATE_KEY; // <-- CHEIA PRIVATĂ
+const IK_PUBLIC = process.env.IMAGEKIT_PUBLIC_KEY;   // <-- CHEIA PUBLICĂ
+
+// DEBUG ENV (Verificare chei)
+console.log("=== IMAGEKIT FINAL DEBUG ===");
+console.log("Endpoint:", IK_URL_ENDPOINT);
+console.log("Secret length (36):", IK_SECRET?.length); 
+console.log("Public Key length (35):", IK_PUBLIC?.length);
 console.log("===========================");
-
-// --- CONFIGURARE IMAGEKIT (cu debug) ---
-// Notă: Cheile restricționate NOUĂ vor fi folosite aici!
-const imagekit = new ImageKit({
-    // Acestea sunt cheile tale (PUBLIC_KEY și PRIVATE_KEY)
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY, 
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY, 
-    // Acesta este URL-ul complet (https://ik.imagekit.io/v51tzf7sl)
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
-    // ID-ul contului, obligatoriu dacă nu este inclus în urlEndpoint
-    imageKitId: process.env.IMAGEKIT_ID // Reintroducem ca variabilă suplimentară
-});
-
-console.log('--- ImageKit initialized with ---');
-console.log('publicKey length:', process.env.IMAGEKIT_API_KEY?.length);
-console.log('privateKey length:', process.env.IMAGEKIT_API_SECRET?.length);
-console.log('urlEndpoint:', process.env.IMAGEKIT_URL_ENDPOINT);
-console.log('---------------------------------');
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
 const storage = multer.memoryStorage();
@@ -188,7 +178,7 @@ app.post('/logout', (req, res) => {
 });
 
 // ==========================================================
-// --- ADĂUGĂ MAȘINĂ (CU IMAGEKIT) ---
+// --- ADĂUGĂ MAȘINĂ (CU ÎNCĂRCARE DIRECTĂ HTTP) ---
 app.post('/add-car', upload.single('carImage'), async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
 
@@ -198,13 +188,42 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
     if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
 
     try {
-        const uploadResponse = await imagekit.upload({
-            file: file.buffer.toString('base64'), 
-            fileName: `${Date.now()}-${file.originalname}`,
-            folder: 'car-app-uploads' 
+        // 1. Conversie în base64 
+        const base64File = file.buffer.toString('base64');
+        
+        // 2. Autentificare prin Basic Auth (Base64(API_SECRET + ":"))
+        const auth = Buffer.from(IK_SECRET + ":").toString("base64");
+        
+        // 3. Formarea datelor pentru request
+        const formData = new URLSearchParams();
+        formData.append('file', base64File);
+        formData.append('fileName', `${Date.now()}-${file.originalname}`);
+        formData.append('folder', 'car-app-uploads');
+        
+        // 4. Încărcarea folosind Fetch API (care ocolește SDK-ul problematic)
+        const uploadUrl = `${IK_URL_ENDPOINT}/api/v1/files/upload`;
+        
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
         });
+        
+        const result = await uploadResponse.json();
+        
+        if (!uploadResponse.ok) {
+            console.error('Eroare ImageKit direct:', result);
+            // Eroare 401: Authentication required
+            if (result.statusCode === 401 || (result.message && result.message.includes('Authentication'))) {
+                 throw new Error("Eroare de autentificare. Verificați IMAGEKIT_PRIVATE_KEY în Render!");
+            }
+            throw new Error(result.message || 'Eroare la încărcarea imaginii pe ImageKit.');
+        }
 
-        const imageUrl = uploadResponse.url;
+        const imageUrl = result.url; // Citim URL-ul din răspuns
 
         const newCar = new Car({
             plateNumber: plateNumber.toUpperCase().trim(),
@@ -220,15 +239,12 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         res.redirect('/profile');
 
     } catch (error) {
-        console.error('--- EROARE CRITICĂ UPLOAD IMAGEKIT ---');
+        console.error('--- EROARE CRITICĂ UPLOAD IMAGEKIT (DIRECT) ---');
         console.error(error); 
         
         let errorMessage = 'A apărut o eroare la salvare.';
         if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
-        if (error.statusCode === 401 || (error.message && error.message.includes('Authentication failed'))) {
-             errorMessage = `Eroare de autentificare ImageKit! Verificați cheile API_KEY și API_SECRET în Render!`;
-        }
-
+        
         res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
     }
 });
