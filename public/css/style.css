@@ -1,119 +1,66 @@
-*{
-box-sizing:border-box;
-margin:0;
-padding:0;
-font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+/* --- RESET ȘI BODY (Minimalist & Bootstrap-friendly) --- */
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
 }
 
-html,body{
-height:100%;
+body { 
+    background-color: #f7f7f7; 
+    color: #333; 
+    min-height: 100vh; 
 }
 
-body{
-background-color:#f7f7f7;
-color:#333;
-min-height:100vh;
-padding-bottom:70px;
+/* --- TAB BAR (Cerința 4) --- */
+.footer.fixed-bottom {
+    display: none; 
+    box-shadow: 0 -3px 8px rgba(0,0,0,0.1);
 }
 
-.footer.fixed-bottom{
-display:none;
-box-shadow:0 -3px 8px rgba(0,0,0,0.1);
-background:#fff;
-border-top:1px solid rgba(0,0,0,0.06);
-z-index:1050;
+.footer .tab {
+    color: #6c757d; 
+    text-decoration: none;
+    font-size: 1.2em;
+    padding: 5px 0;
+    text-align: center;
+    width: 25%;
+    transition: color 0.2s;
 }
 
-.footer.fixed-bottom .tab{
-color:#6c757d;
-text-decoration:none;
-font-size:1.05rem;
-padding:6px 0;
-text-align:center;
-width:25%;
-display:inline-block;
-transition:color .15s ease-in-out;
+.footer .tab span {
+    display: block;
+    font-size: 0.7em;
+    margin-top: 3px;
+    font-weight: normal;
 }
 
-.footer.fixed-bottom .tab span{
-display:block;
-font-size:0.7rem;
-margin-top:3px;
-font-weight:400;
+.footer .tab.active {
+    color: #0d6efd; 
+    font-weight: bold;
 }
 
-.footer.fixed-bottom .tab.active{
-color:#0d6efd;
-font-weight:700;
+.footer .tab.active span {
+    font-weight: bold;
 }
 
-.footer.fixed-bottom .tab.active span{
-font-weight:700;
+.footer .tab.disabled-link {
+    pointer-events: none;
+    opacity: 0.5;
 }
 
-.footer.fixed-bottom .tab.disabled-link{
-pointer-events:none;
-opacity:.5;
+/* Arată Tab Bar DOAR pe mobil */
+@media (max-width: 768px) {
+    .footer.fixed-bottom {
+        display: flex !important; 
+    }
 }
 
-#search-results{
-z-index:1000;
-position:relative;
-top:55px;
-width:100%;
+/* --- HOME.EJS CUSTOM (Bara de căutare și rezultate) --- */
+#search-results {
+    z-index: 1000; 
+    top: 55px;
 }
-
-.input-group.rounded-pill input.form-control{
-padding-left:20px;
-border-radius:999px;
-}
-
-/* ensure bootstrap cards/images consistent */
-.card img{
-object-fit:cover;
-height:180px;
-width:100%;
-display:block;
-}
-
-/* basic responsive helpers */
-.container-sm{
-padding-left:12px;
-padding-right:12px;
-}
-
-/* mobile-specific overrides */
-@media (max-width:767.98px){
-.footer.fixed-bottom{
-display:flex !important;
-position:fixed !important;
-left:0;
-right:0;
-bottom:0;
-height:60px;
-align-items:center;
-justify-content:space-around;
-padding:0 6px;
-}
-
-.footer.fixed-bottom .tab{
-width:auto;
-flex:1 1 25%;
-}
-
-.row{
-display:flex !important;
-flex-wrap:wrap !important;
-margin-left:-0.5rem !important;
-margin-right:-0.5rem !important;
-width:100% !important;
-}
-
-.row > *{
-padding-left:0.5rem !important;
-padding-right:0.5rem !important;
-flex:0 0 50% !important;
-max-width:50% !important;
-box-sizing:border-box !important;
-}
+.input-group.rounded-pill input.form-control {
+    padding-left: 20px; /* Aliniere estetică */
 }
