@@ -64,3 +64,11 @@ body {
 .input-group.rounded-pill input.form-control {
     padding-left: 20px; /* Aliniere estetică */
 }
+
+.flag-icon {
+    width: 20px;
+    height: 14px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
