@@ -7,8 +7,8 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
-const fetch = require('node-fetch'); // Pentru request-ul direct HTTP
-const { URLSearchParams } = require('url'); // Pentru a forma datele de upload
+const fetch = require('node-fetch'); 
+const { URLSearchParams } = require('url'); 
 const MongoDBStore = require('connect-mongodb-session')(session);
  
 const app = express();
@@ -20,16 +20,14 @@ const io = socketIo(server);
 // =================================================================
 
 const PORT = process.env.PORT || 3000;
-// Folosește MONGODB_URI (standard)
 const DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/carAppDB';
-// Variabila esențială pentru criptarea sesiunilor (TREBUIE setată pe Render)
+// Variabila esențială pentru criptarea sesiunilor
 const SESSION_SECRET = process.env.SESSION_SECRET || 'CHIE_SECRETA_SUPER_COMPLEXA_2025';
 
 // --- DATE ESENȚIALE PENTRU UPLOAD DIRECT HTTP ---
 const IK_URL_ENDPOINT = 'https://upload.imagekit.io'; // URL-ul API fix de upload
 const IK_SECRET = process.env.IMAGEKIT_PRIVATE_KEY; 
 const IK_PUBLIC = process.env.IMAGEKIT_PUBLIC_KEY; 
-// IK_ID (IMAGEKIT_ID) nu este folosit direct în request-ul de upload, dar e necesar pentru afișarea imaginilor
 
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
 const storage = multer.memoryStorage();
@@ -56,7 +54,7 @@ const store = new MongoDBStore({
 });
  
 app.use(session({
-    secret: SESSION_SECRET, // Variabila de mediu este folosită aici
+    secret: SESSION_SECRET, 
     resave: false,
     saveUninitialized: false,
     store: store,
@@ -94,9 +92,25 @@ const Car = mongoose.model('Car', carSchema);
 // ==========================================================
 // --- RUTE GET & AUTH ---
 
-app.get('/', (req, res)=> {
-    // Logica ta pentru home (poate încărca mașini aici)
-    res.render('home', { title: 'Car-App - Acasă' });
+// MODIFICARE CRITICĂ: RUTA HOME (Acasă)
+app.get('/', async (req, res) => {
+    try {
+        // Preluăm toate mașinile pentru a le afișa pe pagina principală
+        const cars = await Car.find({}); 
+        
+        // Trimitem variabila 'cars' către home.ejs
+        res.render('home', { 
+            title: 'Car-App - Acasă',
+            cars: cars // Aceasta rezolvă eroarea 'cars is not defined'
+        });
+    } catch (err) {
+        console.error("Eroare la încărcarea mașinilor pe ruta home:", err);
+        // Dacă eșuează, trimitem un array gol pentru a nu crăpa pagina
+        res.render('home', { 
+            title: 'Car-App - Acasă',
+            cars: [] 
+        });
+    }
 });
 
 app.get('/login', (req, res)=> {
@@ -204,7 +218,6 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         const base64File = file.buffer.toString('base64');
         
         // 2. Autentificare prin Basic Auth (Base64(API_SECRET + ":"))
-        // ATENTIE: IK_SECRET trebuie sa fie IMAGEKIT_PRIVATE_KEY
         const auth = Buffer.from(IK_SECRET + ":").toString("base64");
         
         // 3. Formarea datelor pentru request
@@ -219,7 +232,7 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         const uploadResponse = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `Basic ${auth}`, // Spațiu după Basic este crucial
+                'Authorization': `Basic ${auth}`, 
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: formData
@@ -235,7 +248,7 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
             throw new Error(result.message || 'Eroare la încărcarea imaginii pe ImageKit.');
         }
  
-        const imageUrl = result.url; // Citim URL-ul din răspuns
+        const imageUrl = result.url; 
  
         const newCar = new Car({
             plateNumber: plateNumber.toUpperCase().trim(),
