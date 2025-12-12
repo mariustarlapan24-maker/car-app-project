@@ -1,27 +1,62 @@
-<%- include('partials/header', { title: 'Car-App - Acasă' }) %>
+<%- include('partials/header', { title: 'Acasă' }) %>
 
-<div class="container mt-4">
-    <% if (!isLoggedIn) { %>
-        <div class="alert alert-info text-center">
-            Răsfoiești ca invitat. <a href="/login" class="alert-link">Login</a> pentru acces complet.
+<div class="search-section">
+    <div class="search-bar">
+        <div class="flag-left">
+            <img src="/images/drapel-md.png" alt="MD" class="flag-img">
+            <span>MD</span>
         </div>
-    <% } %>
-
-    <div class="mb-4">
-        <div class="input-group">
-            <span class="input-group-text">
-                <img src="/img/drapel-md.png" alt="MD Flag" style="height:20px;"> MD
-            </span>
-            <input type="text" id="plateSearchInput" class="form-control" placeholder="Caută după număr ...">
-            <button class="btn btn-outline-secondary" id="clearSearch" style="display:none;">❌</button>
-        </div>
-        <div id="searchResults" class="list-group mt-2"></div>
+        <input type="text" id="plate-search" placeholder="Caută după număr ..." maxlength="7">
+        <button id="clear-search">❌</button>
     </div>
-
-    <section class="general-listings">
-        <!-- Aici poți pune listările generale de mașini -->
-    </section>
+    <ul id="search-results"></ul>
 </div>
 
-<script src="/js/home.js"></script>
+<div class="cars-list">
+    <% if (cars.length > 0) { %>
+        <div class="cars-grid">
+            <% cars.forEach(car => { %>
+                <div class="car-card">
+                    <img src="<%= car.imageUrls[0] %>" class="car-img">
+                    <div class="car-info">
+                        <div class="flag-md">
+                            <img src="/images/drapel-md.png" alt="MD">
+                            <span>MD</span>
+                        </div>
+                        <div class="plate"><%= car.plateNumber %></div>
+                        <div class="make-model"><%= car.make %> <%= car.model %></div>
+                    </div>
+                    <a href="/car/<%= car._id %>" class="navigate">></a>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <p>Nu există mașini înregistrate încă.</p>
+    <% } %>
+</div>
+
+<script>
+const searchInput = document.getElementById('plate-search');
+const resultsList = document.getElementById('search-results');
+const clearBtn = document.getElementById('clear-search');
+
+searchInput.addEventListener('input', async () => {
+    const query = searchInput.value.toUpperCase();
+    if(!query) { resultsList.innerHTML=''; return; }
+    const res = await fetch(`/api/search?plate=${query}`);
+    const cars = await res.json();
+    resultsList.innerHTML = cars.length ? cars.map(car => `
+        <li>
+            <div class="flag-left">
+                <img src="/images/drapel-md.png"><span>MD</span>
+            </div>
+            <div>${car.plateNumber} - ${car.make} ${car.model}</div>
+            <a href="/car/${car._id}">></a>
+        </li>
+    `).join('') : '<li>Nicio mașină găsită</li>';
+});
+
+clearBtn.addEventListener('click', () => { searchInput.value=''; resultsList.innerHTML=''; });
+</script>
+
 <%- include('partials/footer') %>

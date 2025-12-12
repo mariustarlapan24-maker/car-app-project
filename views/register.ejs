@@ -1,20 +1,18 @@
 <%- include('partials/header', { title: 'Creează Cont' }) %>
 
-<div class="container mt-4" style="max-width:400px;">
+<div class="auth-container">
     <h2>Creează Cont</h2>
-    <% if (error) { %>
-        <div class="alert alert-danger"><%= error %></div>
+    <% if(error) { %>
+        <div class="error-msg"><%= error %></div>
     <% } %>
-
     <form action="/register" method="POST">
-        <input type="text" name="fullName" class="form-control mb-2" placeholder="Nume Complet" required>
-        <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
-        <input type="password" name="password" class="form-control mb-2" placeholder="Parolă" required>
-        <input type="password" name="confirmPassword" class="form-control mb-2" placeholder="Confirmă Parola" required>
-        <button type="submit" class="btn btn-primary w-100">Înregistrează-te</button>
+        <input type="text" name="fullName" placeholder="Nume Complet" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Parolă" required>
+        <input type="password" name="confirmPassword" placeholder="Confirmă Parola" required>
+        <button type="submit" class="btn-primary">Înregistrează-te</button>
     </form>
-
-    <p class="mt-2">Ai deja cont? <a href="/login">Login</a></p>
+    <p>Ai deja cont? <a href="/login">Login</a></p>
 </div>
 
 <%- include('partials/footer') %>

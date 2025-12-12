@@ -1,46 +1,37 @@
 <%- include('partials/header', { title: 'Chat' }) %>
 
-<div class="container mt-4">
-    <h4>Chat (Mașina: <%= roomId %>)</h4>
-    <div id="messages" class="border rounded p-3 mb-3" style="height:300px; overflow-y:auto;">
-        <div class="text-muted">V-ați alăturat chat-ului.</div>
-    </div>
-
-    <form id="chatForm" class="d-flex">
-        <input type="text" id="messageInput" class="form-control me-2" placeholder="Scrie un mesaj..." required>
-        <button class="btn btn-primary" type="submit">Trimite</button>
+<div class="chat-container">
+    <h2>Mesaje</h2>
+    <div id="messages"></div>
+    <form id="chat-form">
+        <input id="msg" type="text" placeholder="Scrie mesajul..." required autocomplete="off">
+        <button type="submit">Trimite</button>
     </form>
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
 <script>
-    const userId = '<%= userId %>';
-    const username = '<%= username %>';
-    const roomId = '<%= roomId %>';
+const socket = io();
+const roomId = "<%= roomId %>";
+const userName = "<%= username %>";
+socket.emit('joinRoom', roomId);
 
-    const socket = io();
-    socket.emit('joinRoom', roomId);
+const form = document.getElementById('chat-form');
+const messagesDiv = document.getElementById('messages');
 
-    const chatForm = document.getElementById('chatForm');
-    const messageInput = document.getElementById('messageInput');
-    const messagesArea = document.getElementById('messages');
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    const msg = document.getElementById('msg').value;
+    socket.emit('chatMessage', { message: msg, senderName: userName, roomId });
+    document.getElementById('msg').value = '';
+});
 
-    chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const message = messageInput.value;
-        if (message) {
-            socket.emit('chatMessage', { roomId, message, senderId: userId, senderName: username });
-            messageInput.value = '';
-        }
-    });
-
-    socket.on('message', (data) => {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('mb-2');
-        messageElement.innerHTML = `<strong>${data.sender}:</strong> ${data.text} <small class="text-muted">${data.time}</small>`;
-        messagesArea.appendChild(messageElement);
-        messagesArea.scrollTop = messagesArea.scrollHeight;
-    });
+socket.on('message', data => {
+    const div = document.createElement('div');
+    div.classList.add('chat-msg');
+    div.innerHTML = `<strong>${data.sender}:</strong> ${data.text} <span class="time">${data.time}</span>`;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
 </script>
 
 <%- include('partials/footer') %>

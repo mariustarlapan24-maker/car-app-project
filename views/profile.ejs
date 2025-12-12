@@ -1,17 +1,18 @@
-<%- include('partials/header', { title: 'Profilul Meu' }) %>
+<%- include('partials/header', { title: 'Garajul Meu' }) %>
 
-<div class="container mt-4">
+<div class="profile-container">
     <h3>Garajul Meu</h3>
-    <% if (cars && cars.length > 0) { %>
-        <div class="row">
+    <% if(cars.length > 0) { %>
+        <div class="cars-grid">
             <% cars.forEach(car => { %>
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="Car Image">
-                        <div class="card-body">
-                            <h5 class="card-title"><%= car.make %> <%= car.model %></h5>
-                            <p class="card-text">Număr: <%= car.plateNumber %></p>
+                <div class="car-card">
+                    <img src="<%= car.imageUrls[0] %>" class="car-img">
+                    <div class="car-info">
+                        <div class="flag-md">
+                            <img src="/images/drapel-md.png"><span>MD</span>
                         </div>
+                        <div class="plate"><%= car.plateNumber %></div>
+                        <div class="make-model"><%= car.make %> <%= car.model %></div>
                     </div>
                 </div>
             <% }) %>
@@ -19,9 +20,8 @@
     <% } else { %>
         <p>Nu ai adăugat nicio mașină încă.</p>
     <% } %>
-
-    <form action="/logout" method="POST" class="mt-3">
-        <button type="submit" class="btn btn-danger">Logout</button>
+    <form action="/logout" method="POST">
+        <button type="submit" class="btn-logout">Logout</button>
     </form>
 </div>
 

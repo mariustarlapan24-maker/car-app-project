@@ -1,3 +1,13 @@
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
+    <footer class="footer">
+        <nav class="tab-bar">
+            <a href="/" class="tab <%= title.includes('Acasă') ? 'active' : '' %>">🏠 Acasă</a>
+            <a href="/add-car" class="tab <%= title.includes('Adaugă') ? 'active' : '' %>">➕ Adaugă</a>
+            <a href="/chat" class="tab <%= title.includes('Chat') ? 'active' : '' %>">💬 Chat</a>
+            <a href="/profile" class="tab <%= title.includes('Profil') || title.includes('Garajul') ? 'active' : '' %>">👤 Profil</a>
+        </nav>
+    </footer>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
 </body>
 </html>

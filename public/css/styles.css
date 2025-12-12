@@ -1,54 +1,60 @@
-/* ===== 1. Stiluri Globale (Override fundal și font) ===== */
-body, html {
-    margin: 0;
-    padding: 0;
-    /* Schimbați fontul global */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* Setați culoarea de fundal a paginii (ușor gri) */
-    background-color: #f5f5f5;
-}
+/* --- RESET ȘI BODY --- */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body { background: #f7f7f7; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ===== 2. Ajustări specifice la Bootstrap Components ===== */
+/* --- HEADER --- */
+.header { background: #1e90ff; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
+.app-title { margin: 0; font-size: 1.8em; }
+.guest-notice { margin-top: 5px; font-size: 0.9em; color: #fffa; display: flex; justify-content: center; align-items: center; }
+.btn-guest-login { margin-left: 10px; padding: 5px 10px; border: none; background: #fff; color: #1e90ff; border-radius: 5px; cursor: pointer; }
 
-/* Stilizare pentru rezultatele căutării dinamice din home.ejs */
-#searchResults .list-group-item {
-    cursor: pointer;
-    transition: background-color 0.2s;
-    /* Asigură text clar pe fundalul gri */
-    color: #333;
-}
+/* --- MAIN CONTAINER --- */
+.main-container { flex: 1; padding: 10px 15px; }
 
-#searchResults .list-group-item:hover {
-    background-color: #e9ecef;
-}
+/* --- AUTENTIFICARE / REGISTER --- */
+.auth-container { max-width: 400px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+.auth-container h2 { margin-bottom: 20px; text-align: center; }
+.auth-container input, .auth-container select, .auth-container button { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; }
+.btn-primary { background: #1e90ff; color: #fff; border: none; cursor: pointer; transition: 0.3s; }
+.btn-primary:hover { background: #0073e6; }
+.btn-secondary { background: #ccc; color: #333; border: none; cursor: pointer; }
+.error-msg { color: red; margin-bottom: 10px; text-align: center; }
 
-/* Carduri din profile.ejs: imagini cu înălțime uniformă */
-.card img {
-    object-fit: cover;
-    height: 180px; /* Înălțime fixă pentru consistență */
-}
+/* --- CĂUTARE BARA --- */
+.search-section { margin: 20px auto; max-width: 500px; }
+.search-bar { display: flex; align-items: center; background: #fff; padding: 5px 10px; border-radius: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.flag-left { display: flex; flex-direction: column; align-items: center; margin-right: 10px; }
+.flag-left img { width: 25px; height: auto; }
+.search-bar input { flex: 1; border: none; outline: none; padding: 10px; font-size: 1em; border-radius: 50px; }
+#clear-search { background: none; border: none; font-size: 1.2em; cursor: pointer; }
 
-/* Chat.ejs: fundal pentru zona de mesaje */
-#messages {
-    background-color: #ffffff;
-    border-radius: 0.25rem; /* preluat din Bootstrap rounded */
-    padding: 10px;
-}
+/* --- LISTA DE MAȘINI --- */
+.cars-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+.car-card { background: #fff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 180px; padding: 10px; display: flex; flex-direction: column; align-items: center; position: relative; }
+.car-card img.car-img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
+.car-info { margin-top: 5px; text-align: center; }
+.flag-md { display: flex; flex-direction: column; align-items: center; }
+.flag-md img { width: 20px; }
+.plate { font-weight: bold; margin-top: 5px; }
+.make-model { font-size: 0.9em; color: #555; }
+.navigate { position: absolute; top: 10px; right: 10px; text-decoration: none; font-size: 1.2em; color: #1e90ff; }
 
-/* Adaugă Mașină: Ajustare input tip file */
-#addCarForm input[type="file"] {
-    padding: 3px;
-}
+/* --- ADD CAR --- */
+.add-car-container { max-width: 400px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+.plate-input { display: flex; align-items: center; margin-bottom: 10px; }
+.plate-input input { flex: 1; margin-left: 10px; }
 
-/* ===== 3. Responsive (Ajustări pentru ecrane mici) ===== */
-@media (max-width: 576px) {
-    /* Mărește butoanele pe mobil pentru o atingere mai ușoară */
-    .btn {
-        font-size: 1.05rem;
-    }
+/* --- PROFILE --- */
+.profile-container { max-width: 500px; margin: 20px auto; }
+.profile-container h3 { text-align: center; margin-bottom: 15px; }
+.btn-logout { width: 100%; padding: 10px; background: #ff4d4d; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
 
-    /* Scade înălțimea imaginii pe ecrane mici */
-    .card img {
-        height: 140px;
-    }
-}
+/* --- CHAT --- */
+.chat-container { max-width: 500px; margin: 20px auto; display: flex; flex-direction: column; }
+#messages { flex: 1; min-height: 300px; background: #fff; padding: 10px; border-radius: 10px; overflow-y: auto; margin-bottom: 10px; }
+.chat-msg { margin-bottom: 5px; }
+
+/* --- TAB BAR --- */
+.tab-bar { display: flex; justify-content: space-around; background: #fff; padding: 10px 0; border-top: 1px solid #ccc; position: sticky; bottom: 0; }
+.tab { color: #555; text-decoration: none; font-size: 1.1em; }
+.tab.active { color: #1e90ff; font-weight: bold; }

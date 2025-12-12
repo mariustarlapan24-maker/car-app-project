@@ -1,44 +1,53 @@
-<%- include('partials/header', { title: 'Adaugă mașină' }) %>
+<%- include('partials/header', { title: 'Adaugă Mașină' }) %>
 
-<div class="container mt-4">
-    <% if (error) { %>
-        <div class="alert alert-danger"><%= error %></div>
+<div class="add-car-container">
+    <h2>Adaugă o Mașină</h2>
+    <% if(error) { %>
+        <div class="error-msg"><%= error %></div>
     <% } %>
-
-    <form id="addCarForm" action="/add-car" method="POST" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label class="form-label">Număr de Înmatriculare</label>
-            <input type="text" name="plateNumber" class="form-control" placeholder="ABC 123" required maxlength="8" 
-            oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');">
+    <form action="/add-car" method="POST" enctype="multipart/form-data">
+        <div class="plate-input">
+            <div class="flag-left">
+                <img src="/images/drapel-md.png"><span>MD</span>
+            </div>
+            <input type="text" name="plateNumber" placeholder="Număr de Înmatriculare" maxlength="7" required>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Marca</label>
-            <select name="make" class="form-select" required>
-                <option value="">Selectează marca</option>
-                <option value="Mercedes">Mercedes-Benz</option>
-                <option value="BMW">BMW</option>
-                <option value="Audi">Audi</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Model</label>
-            <select name="model" class="form-select" required>
-                <option value="">Selectează modelul</option>
-                <option value="E-Class">E-Class</option>
-                <option value="X5">X5</option>
-                <option value="A6">A6</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Imagine Mașină</label>
-            <input type="file" name="carImage" class="form-control" accept="image/*" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Salvează Mașina</button>
+        <select name="make" required>
+            <option value="">Selectează marca…</option>
+            <option value="Audi">Audi</option>
+            <option value="BMW">BMW</option>
+            <option value="Mercedes">Mercedes</option>
+            <option value="Volkswagen">Volkswagen</option>
+            <!-- Adaugă mai multe mărci -->
+        </select>
+        <select name="model" required>
+            <option value="">Selectează modelul…</option>
+        </select>
+        <input type="file" name="carImage" accept="image/*" required>
+        <button type="submit" class="btn-primary">Salvează Mașina</button>
     </form>
 </div>
+
+<script>
+const makeSelect = document.querySelector('select[name="make"]');
+const modelSelect = document.querySelector('select[name="model"]');
+
+const modelsData = {
+    "Audi": ["A3","A4","A6","Q5"],
+    "BMW": ["X1","X3","X5","M3"],
+    "Mercedes": ["C200","E300","S500"],
+    "Volkswagen": ["Golf","Passat","Tiguan"]
+};
+
+makeSelect.addEventListener('change', () => {
+    modelSelect.innerHTML = '<option value="">Selectează modelul…</option>';
+    const models = modelsData[makeSelect.value] || [];
+    models.forEach(m => {
+        const option = document.createElement('option');
+        option.value = m; option.text = m;
+        modelSelect.add(option);
+    });
+});
+</script>
 
 <%- include('partials/footer') %>

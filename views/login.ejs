@@ -1,22 +1,19 @@
-<%- include('partials/header', { title: 'Login Car-App' }) %>
+<%- include('partials/header', { title: 'Login' }) %>
 
-<div class="container mt-4" style="max-width:400px;">
+<div class="auth-container">
     <h2>Login</h2>
-    <% if (error) { %>
-        <div class="alert alert-danger"><%= error %></div>
+    <% if(error) { %>
+        <div class="error-msg"><%= error %></div>
     <% } %>
-
-    <form action="/login" method="POST" class="mb-3">
-        <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
-        <input type="password" name="password" class="form-control mb-2" placeholder="Parolă" required>
-        <button type="submit" class="btn btn-primary w-100">Login</button>
+    <form action="/login" method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Parolă" required>
+        <button type="submit" class="btn-primary">Login</button>
     </form>
-
     <form action="/guest-login" method="POST">
-        <button type="submit" class="btn btn-secondary w-100">Continuă ca Invitat</button>
+        <button type="submit" class="btn-secondary">Continuă ca Invitat</button>
     </form>
-
-    <p class="mt-2">Nu ai cont? <a href="/register">Creează unul!</a></p>
+    <p>Nu ai cont? <a href="/register">Creează unul!</a></p>
 </div>
 
 <%- include('partials/footer') %>
