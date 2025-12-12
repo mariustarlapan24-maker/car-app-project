@@ -2,8 +2,7 @@
     <div class="container d-flex justify-content-around">
         
         <% 
-            // Variabilă pentru a determina ce tab este activ (Cerința 4.4)
-            const currentTitle = title.split(' ')[0]; // Iau doar primul cuvânt
+            const currentTitle = title.split(' ')[0];
         %>
         
         <a href="/" class="tab <%= currentTitle.includes('Acasă') ? 'active' : '' %> text-decoration-none">
@@ -11,23 +10,37 @@
             <span class="d-block">Acasă</span>
         </a>
         
-        <a href="/add-car" class="tab <%= currentTitle.includes('Adaugă') ? 'active' : '' %> text-decoration-none 
-           <%= isGuest ? 'disabled-link' : '' %>">
-            <i class="bi bi-plus-circle-fill"></i>
-            <span class="d-block">Adaugă</span>
-        </a>
-        
-        <a href="/chat" class="tab <%= currentTitle.includes('Mesaje') || currentTitle.includes('Chat') ? 'active' : '' %> text-decoration-none
-           <%= isGuest ? 'disabled-link' : '' %>">
-            <i class="bi bi-chat-dots-fill"></i>
-            <span class="d-block">Chat</span>
-        </a>
-        
-        <a href="/profile" class="tab <%= currentTitle.includes('Garajul') || currentTitle.includes('Profil') ? 'active' : '' %> text-decoration-none
-           <%= isGuest ? 'disabled-link' : '' %>">
-            <i class="bi bi-person-circle"></i>
-            <span class="d-block">Profil</span>
-        </a>
+        <% if (isLoggedIn) { %>
+            <a href="/add-car" class="tab <%= currentTitle.includes('Adaugă') ? 'active' : '' %> text-decoration-none">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span class="d-block">Adaugă</span>
+            </a>
+            
+            <a href="/chat" class="tab <%= currentTitle.includes('Mesaje') || currentTitle.includes('Chat') ? 'active' : '' %> text-decoration-none">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span class="d-block">Chat</span>
+            </a>
+            
+            <a href="/profile" class="tab <%= currentTitle.includes('Garajul') || currentTitle.includes('Profil') ? 'active' : '' %> text-decoration-none">
+                <i class="bi bi-person-circle"></i>
+                <span class="d-block">Profil</span>
+            </a>
+        <% } else { %>
+            <a href="/login" class="tab <%= currentTitle.includes('Login') ? 'active' : '' %> text-decoration-none">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span class="d-block">Login</span>
+            </a>
+            
+            <a href="/register" class="tab <%= currentTitle.includes('Creează') ? 'active' : '' %> text-decoration-none">
+                <i class="bi bi-person-plus-fill"></i>
+                <span class="d-block">Înregistrare</span>
+            </a>
+            
+            <a href="/login" class="tab <%= currentTitle.includes('Profil') ? 'active' : '' %> text-decoration-none">
+                <i class="bi bi-person-circle"></i>
+                <span class="d-block">Login</span>
+            </a>
+        <% } %>
     </div>
 </footer>
 
