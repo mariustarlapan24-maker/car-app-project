@@ -64,3 +64,10 @@ body {
 .input-group.rounded-pill input.form-control {
     padding-left: 20px; /* Aliniere estetică */
 }
+/* --- CORECȚIE GRILĂ BOOTSTRAP PENTRU LAYOUT-UL CU PROBLEME --- */
+.row {
+    width: 100%; 
+}
+.row > * {
+    max-width: 100%; 
+}
