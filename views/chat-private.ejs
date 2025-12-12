@@ -1,0 +1,87 @@
+<%- include('partials/header', { title: `Chat cu ${targetUserName}` }) %>
+
+<style>
+    /* Stil pentru a defini zona de mesaje pe ecran */
+    .messages-box {
+        height: 65vh; 
+        overflow-y: auto; 
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 15px;
+        display: flex;
+        flex-direction: column; 
+    }
+    .chat-msg {
+        max-width: 80%;
+        padding: 8px 12px;
+        border-radius: 15px;
+        margin-bottom: 8px;
+    }
+    .chat-msg strong { font-weight: bold; margin-right: 5px; }
+    .chat-msg .time { font-size: 0.75em; color: #6c757d; float: right; margin-left: 10px; }
+    
+    .own-msg { align-self: flex-end; background-color: #0d6efd; color: white; }
+    .other-msg { align-self: flex-start; background-color: #f8f9fa; border: 1px solid #e9ecef; }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8">
+        <h2 class="text-center mb-4 fw-bold">Chat cu <%= targetUserName %></h2>
+        
+        <div id="messages" class="messages-box shadow-sm">
+        </div>
+        
+        <form id="chat-form" class="input-group mb-3">
+            <input id="msg" type="text" class="form-control" placeholder="Scrie mesajul..." required autocomplete="off">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send-fill"></i> Trimite
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+const socket = io();
+const roomId = "<%= roomId %>"; 
+const senderId = "<%= userId %>"; 
+const senderName = "<%= username %>"; 
+
+socket.emit('joinRoom', roomId);
+
+const form = document.getElementById('chat-form');
+const messagesDiv = document.getElementById('messages');
+
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    const msgInput = document.getElementById('msg');
+    const msg = msgInput.value.trim();
+    
+    if (msg) {
+        socket.emit('chatMessage', { message: msg, senderId, senderName, roomId });
+        msgInput.value = ''; 
+    }
+});
+
+socket.on('message', data => {
+    const div = document.createElement('div');
+    
+    if (data.senderId === senderId) {
+        div.classList.add('own-msg');
+    } else {
+        div.classList.add('other-msg'); 
+    }
+    
+    div.classList.add('chat-msg');
+    
+    div.innerHTML = `
+        <strong>${data.sender}:</strong> 
+        ${data.text} 
+        <span class="time">${data.time}</span>
+    `;
+    
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
+</script>
+
+<%- include('partials/footer') %>

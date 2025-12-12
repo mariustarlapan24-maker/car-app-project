@@ -1,37 +1,25 @@
-<%- include('partials/header', { title: 'Chat' }) %>
+<%- include('partials/header', { title: 'Mesaje' }) %>
 
-<div class="chat-container">
-    <h2>Mesaje</h2>
-    <div id="messages"></div>
-    <form id="chat-form">
-        <input id="msg" type="text" placeholder="Scrie mesajul..." required autocomplete="off">
-        <button type="submit">Trimite</button>
-    </form>
+<div class="row justify-content-center mt-5">
+    <div class="col-12 col-md-8">
+        <h2 class="text-center mb-4 fw-bold">Mesaje</h2>
+        
+        <div class="list-group shadow-sm">
+            
+            <a href="/chat/private/<%= userId %>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold">Contact: <%= username %></div>
+                    <small class="text-muted">Apasa aici pentru a te testa</small>
+                </div>
+                <span class="badge bg-primary rounded-pill">3</span>
+            </a>
+            
+            <div class="list-group-item text-center text-muted py-4">
+                Conversațiile apar aici după ce inițiezi un chat de pe pagina de Detalii Mașină.
+            </div>
+
+        </div>
+    </div>
 </div>
-
-<script>
-const socket = io();
-const roomId = "<%= roomId %>";
-const userName = "<%= username %>";
-socket.emit('joinRoom', roomId);
-
-const form = document.getElementById('chat-form');
-const messagesDiv = document.getElementById('messages');
-
-form.addEventListener('submit', e => {
-    e.preventDefault();
-    const msg = document.getElementById('msg').value;
-    socket.emit('chatMessage', { message: msg, senderName: userName, roomId });
-    document.getElementById('msg').value = '';
-});
-
-socket.on('message', data => {
-    const div = document.createElement('div');
-    div.classList.add('chat-msg');
-    div.innerHTML = `<strong>${data.sender}:</strong> ${data.text} <span class="time">${data.time}</span>`;
-    messagesDiv.appendChild(div);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
-</script>
 
 <%- include('partials/footer') %>

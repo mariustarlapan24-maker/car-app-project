@@ -1,13 +1,38 @@
-    </main>
-    <footer class="footer">
-        <nav class="tab-bar">
-            <a href="/" class="tab <%= title.includes('Acasă') ? 'active' : '' %>">🏠 Acasă</a>
-            <a href="/add-car" class="tab <%= title.includes('Adaugă') ? 'active' : '' %>">➕ Adaugă</a>
-            <a href="/chat" class="tab <%= title.includes('Chat') ? 'active' : '' %>">💬 Chat</a>
-            <a href="/profile" class="tab <%= title.includes('Profil') || title.includes('Garajul') ? 'active' : '' %>">👤 Profil</a>
-        </nav>
-    </footer>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/main.js"></script>
+</div> <footer class="footer mt-auto py-2 bg-white fixed-bottom d-md-none border-top">
+    <div class="container d-flex justify-content-around">
+        
+        <% 
+            // Variabilă pentru a determina ce tab este activ (Cerința 4.4)
+            const currentTitle = title.split(' ')[0]; // Iau doar primul cuvânt
+        %>
+        
+        <a href="/" class="tab <%= currentTitle.includes('Acasă') ? 'active' : '' %> text-decoration-none">
+            <i class="bi bi-house-door-fill"></i>
+            <span class="d-block">Acasă</span>
+        </a>
+        
+        <a href="/add-car" class="tab <%= currentTitle.includes('Adaugă') ? 'active' : '' %> text-decoration-none 
+           <%= isGuest ? 'disabled-link' : '' %>">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span class="d-block">Adaugă</span>
+        </a>
+        
+        <a href="/chat" class="tab <%= currentTitle.includes('Mesaje') || currentTitle.includes('Chat') ? 'active' : '' %> text-decoration-none
+           <%= isGuest ? 'disabled-link' : '' %>">
+            <i class="bi bi-chat-dots-fill"></i>
+            <span class="d-block">Chat</span>
+        </a>
+        
+        <a href="/profile" class="tab <%= currentTitle.includes('Garajul') || currentTitle.includes('Profil') ? 'active' : '' %> text-decoration-none
+           <%= isGuest ? 'disabled-link' : '' %>">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-block">Profil</span>
+        </a>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/main.js"></script>
 </body>
 </html>

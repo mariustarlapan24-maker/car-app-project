@@ -1,19 +1,33 @@
 <%- include('partials/header', { title: 'Login' }) %>
 
-<div class="auth-container">
-    <h2>Login</h2>
-    <% if(error) { %>
-        <div class="error-msg"><%= error %></div>
-    <% } %>
-    <form action="/login" method="POST">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Parolă" required>
-        <button type="submit" class="btn-primary">Login</button>
-    </form>
-    <form action="/guest-login" method="POST">
-        <button type="submit" class="btn-secondary">Continuă ca Invitat</button>
-    </form>
-    <p>Nu ai cont? <a href="/register">Creează unul!</a></p>
+<div class="row justify-content-center mt-5">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-lg p-4 border-0">
+            <h2 class="card-title text-center mb-4 fw-bold">Login</h2>
+            
+            <% if(error) { %>
+                <div class="alert alert-danger" role="alert"><%= error %></div>
+            <% } %>
+            
+            <form action="/login" method="POST" class="mb-3">
+                <div class="mb-3">
+                    <input type="email" name="email" class="form-control form-control-lg" placeholder="Email" required>
+                </div>
+                <div class="mb-4">
+                    <input type="password" name="password" class="form-control form-control-lg" placeholder="Parolă" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">Login</button>
+            </form>
+            
+            <form action="/guest-login" method="POST" class="d-grid gap-2 mb-4">
+                <button type="submit" class="btn btn-secondary w-100 btn-lg">Continuă ca Invitat</button>
+            </form>
+            
+            <p class="text-center mt-3">
+                Nu ai cont? <a href="/register" class="fw-bold text-primary text-decoration-none">Creează unul!</a>
+            </p>
+        </div>
+    </div>
 </div>
 
 <%- include('partials/footer') %>

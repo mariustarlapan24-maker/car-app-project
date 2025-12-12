@@ -1,62 +1,77 @@
 <%- include('partials/header', { title: 'Acasă' }) %>
 
-<div class="search-section">
-    <div class="search-bar">
-        <div class="flag-left">
-            <img src="/images/drapel-md.png" alt="MD" class="flag-img">
-            <span>MD</span>
-        </div>
-        <input type="text" id="plate-search" placeholder="Caută după număr ..." maxlength="7">
-        <button id="clear-search">❌</button>
+<% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+        Mașina a fost înregistrată cu succes!
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <ul id="search-results"></ul>
+<% } %>
+
+<div class="row justify-content-center pt-5 pb-5"> 
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="input-group position-relative shadow-lg rounded-pill bg-white">
+            
+            <span class="input-group-text bg-transparent rounded-start-pill py-2 border-0">
+                <div class="d-flex flex-column align-items-center me-2 flag-input-box">
+                    <img src="/images/drapel-md.png" alt="MD" style="width: 25px;">
+                    <span class="fw-bold text-dark" style="font-size: 0.7em;">MD</span>
+                </div>
+            </span>
+            
+            <input type="text" id="plate-search" name="plateNumber" class="form-control rounded-0 border-0" 
+                   placeholder="Caută după număr ..." maxlength="7" style="height: 50px;">
+                   
+            <button id="clear-search" class="btn btn-transparent rounded-end-pill" type="button">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            
+            <ul id="search-results" class="list-group position-absolute w-100 mt-5 shadow-lg z-3"></ul>
+        </div>
+    </div>
 </div>
 
-<div class="cars-list">
+<h2 class="text-center mb-4 fw-bold">Lista Tuturor Mașinilor</h2>
+
+<div class="cars-grid-container">
     <% if (cars.length > 0) { %>
-        <div class="cars-grid">
+        <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
             <% cars.forEach(car => { %>
-                <div class="car-card">
-                    <img src="<%= car.imageUrls[0] %>" class="car-img">
-                    <div class="car-info">
-                        <div class="flag-md">
-                            <img src="/images/drapel-md.png" alt="MD">
-                            <span>MD</span>
+                <div class="col">
+                    <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block">
+                        <div class="card shadow-sm h-100 border-0 overflow-hidden">
+                            <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="<%= car.make %> <%= car.model %>" style="height: 100px; object-fit: cover;">
+                            <div class="card-body p-2 position-relative">
+                                
+                                <i class="bi bi-chevron-right position-absolute top-0 end-0 m-2 fs-6 text-primary"></i>
+                                
+                                <div class="d-flex align-items-start">
+                                    <div class="d-flex flex-column align-items-center me-2">
+                                        <img src="/images/drapel-md.png" alt="MD" style="width: 18px;">
+                                        <span class="fw-bold" style="font-size: 0.6em;">MD</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-primary" style="font-size: 0.9em;"><%= car.plateNumber %></div>
+                                        <div class="text-muted" style="font-size: 0.75em;"><%= car.make %> <%= car.model %></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="plate"><%= car.plateNumber %></div>
-                        <div class="make-model"><%= car.make %> <%= car.model %></div>
-                    </div>
-                    <a href="/car/<%= car._id %>" class="navigate">></a>
+                    </a>
                 </div>
             <% }) %>
         </div>
     <% } else { %>
-        <p>Nu există mașini înregistrate încă.</p>
+        <p class="alert alert-info text-center">Nu există mașini înregistrate încă.</p>
     <% } %>
 </div>
 
-<script>
-const searchInput = document.getElementById('plate-search');
-const resultsList = document.getElementById('search-results');
-const clearBtn = document.getElementById('clear-search');
-
-searchInput.addEventListener('input', async () => {
-    const query = searchInput.value.toUpperCase();
-    if(!query) { resultsList.innerHTML=''; return; }
-    const res = await fetch(`/api/search?plate=${query}`);
-    const cars = await res.json();
-    resultsList.innerHTML = cars.length ? cars.map(car => `
-        <li>
-            <div class="flag-left">
-                <img src="/images/drapel-md.png"><span>MD</span>
-            </div>
-            <div>${car.plateNumber} - ${car.make} ${car.model}</div>
-            <a href="/car/${car._id}">></a>
-        </li>
-    `).join('') : '<li>Nicio mașină găsită</li>';
-});
-
-clearBtn.addEventListener('click', () => { searchInput.value=''; resultsList.innerHTML=''; });
-</script>
-
 <%- include('partials/footer') %>
+<script>
+    // Logica pentru a afișa mesajul de succes dacă există un parametru 'success'
+    if (window.location.search.includes('success=MasinaÎnregistrată')) {
+        // Redirecționează la pagina Acasă goală (pentru curățenie)
+        setTimeout(() => {
+            window.history.replaceState({}, document.title, "/");
+        }, 100);
+    }
+</script>

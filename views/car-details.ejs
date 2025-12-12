@@ -1,0 +1,44 @@
+<%- include('partials/header', { title: 'Detalii Mașină' }) %>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-12 col-md-8 col-lg-6">
+        <h2 class="text-center mb-4 fw-bold">Detalii mașină</h2>
+
+        <div class="card shadow-lg border-0 mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                
+                <div class="d-flex align-items-center">
+                    <div class="d-flex flex-column align-items-center me-3">
+                        <img src="/images/drapel-md.png" alt="MD" style="width: 25px;">
+                        <span class="fw-bold" style="font-size: 0.7em;">MD</span>
+                    </div>
+                    <div class="fs-3 fw-bolder"><%= car.plateNumber %></div>
+                </div>
+            </div>
+            
+            <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="<%= car.make %> <%= car.model %>" style="height: 300px; object-fit: cover;">
+            
+            <div class="card-body">
+                <h5 class="card-title text-center fs-3 fw-bold mb-4"><%= car.make %> <%= car.model %></h5>
+
+                <div class="d-flex justify-content-between align-items-center p-3 border rounded bg-light">
+                    <h6 class="mb-0 fw-bold text-dark">Contactează proprietarul:</h6>
+                    
+                    <% if (!isOwner && !isGuest) { %>
+                        <a href="/chat/private/<%= ownerId %>" class="btn btn-primary btn-lg shadow">
+                            <i class="bi bi-chat-dots-fill me-2"></i> Chat
+                        </a>
+                    <% } else if (isOwner) { %>
+                        <span class="badge bg-success p-2">E mașina ta</span>
+                    <% } else { %>
+                        <a href="/login" class="btn btn-secondary btn-sm">
+                            Login pentru Chat
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

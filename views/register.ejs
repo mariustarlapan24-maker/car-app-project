@@ -1,18 +1,36 @@
 <%- include('partials/header', { title: 'Creează Cont' }) %>
 
-<div class="auth-container">
-    <h2>Creează Cont</h2>
-    <% if(error) { %>
-        <div class="error-msg"><%= error %></div>
-    <% } %>
-    <form action="/register" method="POST">
-        <input type="text" name="fullName" placeholder="Nume Complet" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Parolă" required>
-        <input type="password" name="confirmPassword" placeholder="Confirmă Parola" required>
-        <button type="submit" class="btn-primary">Înregistrează-te</button>
-    </form>
-    <p>Ai deja cont? <a href="/login">Login</a></p>
+<div class="row justify-content-center mt-5">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-lg p-4 border-0">
+            <h2 class="card-title text-center mb-4 fw-bold">Creează Cont</h2>
+            
+            <% if(error) { %>
+                <div class="alert alert-danger" role="alert"><%= error %></div>
+            <% } %>
+            
+            <form action="/register" method="POST">
+                <div class="mb-3">
+                    <input type="text" name="fullName" class="form-control" placeholder="Nume Complet" required>
+                </div>
+                <div class="mb-3">
+                    <input type="email" name="email" class="form-control" placeholder="Email" required>
+                </div>
+                <div class="mb-3">
+                    <input type="password" name="password" class="form-control" placeholder="Parolă" required minlength="6">
+                </div>
+                <div class="mb-4">
+                    <input type="password" name="confirmPassword" class="form-control" placeholder="Confirmă Parola" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">Înregistrează-te</button>
+            </form>
+            
+            <p class="text-center mt-3">
+                Ai deja cont? <a href="/login" class="fw-bold text-primary text-decoration-none">Login</a>
+            </p>
+        </div>
+    </div>
 </div>
 
 <%- include('partials/footer') %>
