@@ -34,7 +34,7 @@
 
 <div class="cars-grid-container">
     <% if (cars.length > 0) { %>
-        <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
             <% cars.forEach(car => { %>
                 <div class="col">
                     <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block">
