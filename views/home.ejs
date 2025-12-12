@@ -27,7 +27,7 @@
             
             <ul id="search-results" class="list-group position-absolute w-100 mt-5 shadow-lg z-3"></ul>
         </div>
-    </div>
+      </div>
 </div>
 
 <h2 class="text-center mb-4 fw-bold">Lista Tuturor Mașinilor</h2>
@@ -38,7 +38,7 @@
             <% cars.forEach(car => { %>
                 <div class="col">
                     <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block">
-                        <div class="card shadow-sm h-100 border-0 overflow-hidden">
+                        <div class="card shadow-sm h-100 border-0">
                             <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="<%= car.make %> <%= car.model %>" style="height: 100px; object-fit: cover;">
                             <div class="card-body p-2 position-relative">
                                 
