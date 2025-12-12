@@ -1,374 +1,283 @@
+// --- IMPORTURI NECESARE ---
 const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 const mongoose = require('mongoose');
+const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
-const http = require('http');
-const { Server } = require('socket.io');
 const multer = require('multer');
-const ImageKit = require('imagekit');
-
+const fetch = require('node-fetch'); // Pentru request-ul direct HTTP
+const { URLSearchParams } = require('url'); // Pentru a forma datele de upload
+const MongoDBStore = require('connect-mongodb-session')(session);
+ 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketIo(server);
 
 // =================================================================
-// 1. CONFIGURARE
+// 1. CONFIGURARE ȘI VARIABILE DE MEDIU
 // =================================================================
 
-// Variabile de mediu (ESTE CRITIC să le setezi pe Render)
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/carapp';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'secret_key_foarte_secret';
+// Folosește MONGODB_URI (standard)
+const DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/carAppDB';
+// Variabila esențială pentru criptarea sesiunilor (TREBUIE setată pe Render)
+const SESSION_SECRET = process.env.SESSION_SECRET || 'CHIE_SECRETA_SUPER_COMPLEXA_2025';
 
-// Configurare ImageKit
-const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-});
-const upload = multer({ storage: multer.memoryStorage() });
+// --- DATE ESENȚIALE PENTRU UPLOAD DIRECT HTTP ---
+const IK_URL_ENDPOINT = 'https://upload.imagekit.io'; // URL-ul API fix de upload
+const IK_SECRET = process.env.IMAGEKIT_PRIVATE_KEY; 
+const IK_PUBLIC = process.env.IMAGEKIT_PUBLIC_KEY; 
+// IK_ID (IMAGEKIT_ID) nu este folosit direct în request-ul de upload, dar e necesar pentru afișarea imaginilor
 
-// Conectare la MongoDB
-mongoose.connect(MONGO_URI)
-    .then(() => console.log('MongoDB conectat'))
-    .catch(err => console.error('Eroare conectare MongoDB:', err));
-
-// Middleware
-app.set('view engine', 'ejs');
-app.use(express.static('public'));
+// --- CONFIGURARE MULTER (Stocare în memorie) ---
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+ 
+// --- CONEXIUNE LA MONGODB ATLAS ---
+mongoose.connect(DB_URI)
+  .then(()=> console.log('✅ Conectat la MongoDB Atlas!'))
+  .catch(err => console.error('❌ Eroare conectare la bază de date:', err));
+ 
+// --- CONFIGURARE MIDDLEWARE ---
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+ 
+// Configurare EJS și fișiere statice
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+ 
+// --- SESIUNI PERSISTENTE ---
+const store = new MongoDBStore({
+    uri: DB_URI,
+    collection: 'sessions',
+});
+ 
 app.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 de ore
+    secret: SESSION_SECRET, // Variabila de mediu este folosită aici
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 ore
 }));
-
-// =================================================================
-// 2. SCHEME MONGOOSE
-// =================================================================
-
+ 
+// --- MIDDLEWARE UTILIZATOR ---
+app.use((req, res, next)=> {
+    res.locals.isLoggedIn = !!req.session.userId;
+    res.locals.isGuest = !!req.session.isGuest && !req.session.userId;
+    next();
+});
+ 
+// ==========================================================
+// --- MODELE (SCHEMAS) ---
 const userSchema = new mongoose.Schema({
-    fullName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    phoneNumber: { type: String, default: '' },
+    cars: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Car' }]
 });
 const User = mongoose.model('User', userSchema);
-
+ 
 const carSchema = new mongoose.Schema({
-    plateNumber: { type: String, required: true, unique: true },
-    make: { type: String, required: true },
-    model: { type: String, required: true },
-    imageUrls: [{ type: String }],
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+    plateNumber: { type: String, required: true, unique: true },
+    make: { type: String, required: true },
+    model: { type: String, required: true },
+    imageUrls: [{ type: String, required: true }],
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    addedDate: { type: Date, default: Date.now }
 });
 const Car = mongoose.model('Car', carSchema);
+ 
+// ==========================================================
+// --- RUTE GET & AUTH ---
 
-
-// =================================================================
-// 3. MIDDLEWARE: Variabile Globale EJS
-// =================================================================
-app.use((req, res, next) => {
-    // Variabile esențiale pentru header, footer (Tab Bar) și logica de acces
-    res.locals.isGuest = !req.session.userId;
-    res.locals.username = req.session.username || 'Invitat';
-    res.locals.userId = req.session.userId || null;
-    next();
+app.get('/', (req, res)=> {
+    // Logica ta pentru home (poate încărca mașini aici)
+    res.render('home', { title: 'Car-App - Acasă' });
 });
 
-// Middleware pentru a proteja rutele care necesită autentificare
-const requireLogin = (req, res, next) => {
-    if (res.locals.isGuest) {
-        return res.redirect('/login');
-    }
-    next();
-};
+app.get('/login', (req, res)=> {
+    res.render('login', { title: 'Login Car-App', error: null });
+});
 
-// =================================================================
-// 4. LOGICĂ CHAT PRIVAT (Socket.IO)
-// =================================================================
+app.get('/register', (req, res)=> {
+    res.render('register', { title: 'Creează Cont', error: null });
+});
 
-const messages = {}; // Stocare temporară a mesajelor în RAM
-// Funcție pentru a genera un ID de cameră consistent între 2 utilizatori
-function getRoomId(user1Id, user2Id) {
-    const sortedIds = [user1Id, user2Id].sort();
-    return sortedIds.join('_');
-}
+app.get('/add-car', (req, res)=> {
+    if (!req.session.userId) return res.redirect('/login');
+    res.render('add-car', { title: 'Adaugă mașină', error: null });
+});
+
+app.get('/profile', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    try {
+        const user = await User.findById(req.session.userId).populate('cars');
+        res.render('profile', { title: 'Profilul Meu', user: user, cars: user.cars });
+    } catch (err) {
+        console.error("Eroare la profil:", err);
+        res.redirect('/');
+    }
+});
+
+app.get('/chat', (req, res)=> {
+    if (!req.session.userId) return res.redirect('/login');
+    res.render('chat', {
+        title: 'Chat',
+        userId: req.session.userId,
+        username: 'User_' + req.session.userId.substring(0, 4),
+        roomId: 'defaultCarRoom'
+    });
+});
+
+app.get('/api/search', async (req, res) => {
+    const { plate } = req.query;
+    if (!plate) return res.json([]);
+    try {
+        const cars = await Car.find({
+            plateNumber: { $regex: '^' + plate, $options: 'i' }
+        }).limit(10).select('plateNumber make model');
+        res.json(cars);
+    } catch (error) {
+        res.status(500).json([]);
+    }
+});
+
+app.post('/register', async (req, res) => {
+    const { fullName, email, password, confirmPassword } = req.body;
+    if (password !== confirmPassword) return res.render('register', { error: 'Parolele nu se potrivesc.', title: 'Creează Cont' });
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ fullName, email, password: hashedPassword });
+        await newUser.save();
+        req.session.userId = newUser._id;
+        res.redirect('/');
+    } catch (error) {
+        if (error.code === 11000) return res.render('register', { error: 'Acest email este deja înregistrat.', title: 'Creează Cont' });
+        res.render('register', { error: 'A apărut o eroare la înregistrare.', title: 'Creează Cont' });
+    }
+});
+
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.render('login', { error: 'Email sau parolă incorectă.', email, title: 'Login Car-App' });
+        }
+        req.session.userId = user._id;
+        req.session.isGuest = false;
+        res.redirect('/');
+    } catch (error) {
+        console.error("Eroare la login:", error);
+        res.render('login', { error: 'A apărut o eroare de server.', title: 'Login Car-App' });
+    }
+});
+
+app.post('/guest-login', (req, res) => {
+    req.session.userId = null;
+    req.session.isGuest = true;
+    res.redirect('/');
+});
+
+app.post('/logout', (req, res) => {
+    req.session.destroy(()=> {
+        res.redirect('/');
+    });
+});
+ 
+// ==========================================================
+// --- ADĂUGĂ MAȘINĂ (CU ÎNCĂRCARE DIRECTĂ HTTP) ---
+app.post('/add-car', upload.single('carImage'), async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+ 
+    const { plateNumber, make, model } = req.body;
+    const file = req.file;
+ 
+    if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
+ 
+    try {
+        // 1. Conversie în base64 
+        const base64File = file.buffer.toString('base64');
+        
+        // 2. Autentificare prin Basic Auth (Base64(API_SECRET + ":"))
+        // ATENTIE: IK_SECRET trebuie sa fie IMAGEKIT_PRIVATE_KEY
+        const auth = Buffer.from(IK_SECRET + ":").toString("base64");
+        
+        // 3. Formarea datelor pentru request
+        const formData = new URLSearchParams();
+        formData.append('file', base64File);
+        formData.append('fileName', `${Date.now()}-${file.originalname}`);
+        formData.append('folder', 'car-app-uploads');
+        
+        // 4. Încărcarea folosind Fetch API
+        const uploadUrl = `${IK_URL_ENDPOINT}/api/v1/files/upload`;
+        
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`, // Spațiu după Basic este crucial
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        });
+        
+        const result = await uploadResponse.json();
+        
+        if (!uploadResponse.ok) {
+            console.error('Eroare ImageKit direct:', result);
+            if (result.statusCode === 401 || (result.message && result.message.includes('Authentication'))) {
+                throw new Error("Eroare de autentificare. Verificați IMAGEKIT_PRIVATE_KEY în Render!");
+            }
+            throw new Error(result.message || 'Eroare la încărcarea imaginii pe ImageKit.');
+        }
+ 
+        const imageUrl = result.url; // Citim URL-ul din răspuns
+ 
+        const newCar = new Car({
+            plateNumber: plateNumber.toUpperCase().trim(),
+            make,
+            model,
+            imageUrls: [imageUrl],
+            owner: req.session.userId
+        });
+ 
+        await newCar.save();
+        await User.findByIdAndUpdate(req.session.userId, { $push: { cars: newCar._id } });
+ 
+        res.redirect('/profile');
+ 
+    } catch (error) {
+        console.error('--- EROARE CRITICĂ UPLOAD IMAGEKIT (DIRECT) ---');
+        console.error(error);
+        
+        let errorMessage = 'A apărut o eroare la salvare.';
+        if (error.code === 11000) errorMessage = 'O mașină cu acest număr de înmatriculare există deja.';
+        
+        res.render('add-car', { title: 'Adaugă mașină', error: errorMessage });
+    }
+});
+ 
+// ==========================================================
+// --- CHAT (Socket.IO) ---
 
 io.on('connection', (socket) => {
-    socket.on('joinRoom', (roomId) => {
-        socket.join(roomId);
-        console.log(`User joined room: ${roomId}`);
-        
-        // Trimiterea istoricului camerei
-        if (messages[roomId]) {
-            messages[roomId].forEach(msg => {
-                socket.emit('message', msg);
-            });
-        }
-    });
-
-    socket.on('chatMessage', ({ message, senderId, senderName, roomId }) => {
-        const time = new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-        const data = { senderId, sender: senderName, text: message, time };
-
-        if (!messages[roomId]) {
-            messages[roomId] = [];
-        }
-        messages[roomId].push(data);
-        
-        io.to(roomId).emit('message', data);
-    });
-
-    socket.on('disconnect', () => {
-        // console.log('User disconnected');
-    });
+    socket.on('joinRoom', (roomId) => {
+        socket.join(roomId);
+    });
+    socket.on('chatMessage', (data) => {
+        io.to(data.roomId).emit('message', {
+            text: data.message,
+            sender: data.senderName,
+            time: new Date().toLocaleTimeString('ro-RO')
+        });
+    });
 });
-
-
-// =================================================================
-// 5. RUTE DE AUTENTIFICARE ȘI SESIUNE (Cerințele 2 & 3)
-// =================================================================
-
-// RUTA LOGIN (GET)
-app.get('/login', (req, res) => {
-    res.render('login', { title: 'Login', error: null });
-});
-
-// RUTA LOGIN (POST)
-app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (user && await bcrypt.compare(password, user.password)) {
-            req.session.userId = user._id.toString();
-            req.session.username = user.fullName;
-            // Redirecționare după login (Cerința 4.1)
-            return res.redirect('/'); 
-        }
-        res.render('login', { title: 'Login', error: 'Email sau parolă incorecte.' });
-    } catch (err) {
-        console.error(err);
-        res.render('login', { title: 'Login', error: 'Eroare la autentificare.' });
-    }
-});
-
-// RUTA CONTINUĂ CA INVITAT (Simulare login guest)
-app.post('/guest-login', (req, res) => {
-    // Nu se setează userId, rămâne 'isGuest = true'
-    res.redirect('/');
-});
-
-// RUTA REGISTER (GET)
-app.get('/register', (req, res) => {
-    res.render('register', { title: 'Creează Cont', error: null });
-});
-
-// RUTA REGISTER (POST)
-app.post('/register', async (req, res) => {
-    const { fullName, email, password, confirmPassword } = req.body;
-    
-    if (password !== confirmPassword) {
-        return res.render('register', { title: 'Creează Cont', error: 'Parolele nu se potrivesc.' });
-    }
-    
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ fullName, email, password: hashedPassword });
-        await newUser.save();
-        
-        req.session.userId = newUser._id.toString();
-        req.session.username = newUser.fullName;
-        res.redirect('/');
-        
-    } catch (err) {
-        let errorMessage = 'Eroare la înregistrare.';
-        // Eroare specifică MongoDB (Email existent - Cerința 3)
-        if (err.code === 11000) { 
-            errorMessage = 'Acest email este deja înregistrat.';
-        }
-        res.render('register', { title: 'Creează Cont', error: errorMessage });
-    }
-});
-
-// RUTA LOGOUT (Cerința 7.3)
-app.post('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Eroare la delogare.');
-        }
-        res.redirect('/'); // Redirecționează la Acasă (Invitat)
-    });
-});
-
-// =================================================================
-// 6. RUTE MAȘINI ȘI PAGINI (Cerințele 1, 5, 7, 8)
-// =================================================================
-
-// RUTA PAGINA ACASĂ (Home - Cerința 1)
-app.get('/', async (req, res) => {
-    try {
-        const cars = await Car.find().populate('owner', 'email');
-        res.render('home', { title: 'Acasă', cars, error: null });
-    } catch (err) {
-        console.error(err);
-        res.render('home', { title: 'Acasă', cars: [], error: 'Eroare la încărcarea mașinilor.' });
-    }
-});
-
-// RUTA ADADUGĂ MAȘINĂ (GET)
-app.get('/add-car', requireLogin, (req, res) => {
-    res.render('add-car', { title: 'Adaugă Mașină', error: null });
-});
-
-// RUTA ADADUGĂ MAȘINĂ (POST - Cerința 5)
-app.post('/add-car', requireLogin, upload.array('carImage', 3), async (req, res) => {
-    const { plateNumber, make, model } = req.body;
-    const files = req.files;
-
-    if (!plateNumber || !make || !model || files.length === 0) {
-        // Eroare câmpuri incomplete (Cerința 5.5)
-        return res.render('add-car', { title: 'Adaugă Mașină', error: 'Trebuie să completezi toate spațiile și să încarci minim o imagine.' });
-    }
-
-    try {
-        const uploadPromises = files.map(file => {
-            return imagekit.upload({
-                file: file.buffer,
-                fileName: `${plateNumber}-${Date.now()}`,
-                folder: '/car-app'
-            });
-        });
-
-        const uploadResults = await Promise.all(uploadPromises);
-        const imageUrls = uploadResults.map(result => result.url);
-        
-        const newCar = new Car({
-            plateNumber: plateNumber.toUpperCase().replace(/\s/g, ''), // Salvează fără spațiu
-            make,
-            model,
-            imageUrls,
-            owner: req.session.userId
-        });
-        await newCar.save();
-
-        // Mesaj de succes și redirecționare (Cerința 5.5)
-        // Redirecționarea imediată după succes (fără mesaj vizibil de 2s) este mai simplă
-        res.redirect('/?success=MasinaÎnregistrată');
-
-    } catch (err) {
-        let errorMessage = 'Eroare la salvarea mașinii.';
-        // Eroare Număr de Înmatriculare existent (Cerința 5.5)
-        if (err.code === 11000) { 
-            errorMessage = `Numărul de înmatriculare ${plateNumber} este deja înregistrat.`;
-        }
-        res.render('add-car', { title: 'Adaugă Mașină', error: errorMessage });
-    }
-});
-
-// RUTA PAGINA DETALII MAȘINĂ (Cerința 8)
-app.get('/car/:carId', async (req, res) => {
-    try {
-        const car = await Car.findById(req.params.carId).populate('owner', 'email fullName');
-        if (!car) {
-            return res.status(404).render('404', { title: 'Mașină negăsită' });
-        }
-        
-        const isOwner = res.locals.userId && car.owner._id.toString() === res.locals.userId;
-        let chatRoomId = null;
-
-        if (res.locals.userId && !isOwner) {
-            // Generarea ID-ului camerei pentru chat privat (Cerința 8.3)
-            chatRoomId = getRoomId(res.locals.userId, car.owner._id.toString());
-        }
-
-        res.render('car-details', { 
-            title: 'Detalii Mașină', 
-            car, 
-            isOwner,
-            ownerId: car.owner._id, // Necesare pentru butonul de Chat
-            ownerFullName: car.owner.fullName
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).render('error', { title: 'Eroare Server' });
-    }
-});
-
-// RUTA PAGINA PROFIL/GARAG (Cerința 7)
-app.get('/profile', requireLogin, async (req, res) => {
-    try {
-        // Obține doar mașinile utilizatorului curent
-        const userCars = await Car.find({ owner: req.session.userId });
-        res.render('profile', { title: 'Garajul Meu', cars: userCars });
-    } catch (err) {
-        console.error(err);
-        res.render('profile', { title: 'Garajul Meu', cars: [], error: 'Eroare la încărcarea mașinilor proprii.' });
-    }
-});
-
-
-// =================================================================
-// 7. RUTE CHAT (Cerința 6)
-// =================================================================
-
-// RUTA PRINCIPALĂ MESAJE (LISTA DE CONVERSAȚII)
-app.get('/chat', requireLogin, async (req, res) => {
-    // NOTĂ: Pentru a afișa lista reală de conversații (Cerința 6.2),
-    // ar trebui să interogăm o colecție de "Conversations" din DB.
-    // Deoarece nu ai furnizat modelul de chat, lăsăm o pagină placeholder.
-    res.render('chat', { 
-        title: 'Mesaje',
-    });
-});
-
-// RUTA CHAT PRIVAT (Deschisă de pe Detalii Mașină - Cerința 6.3)
-app.get('/chat/private/:ownerId', requireLogin, async (req, res) => {
-    const targetUser = await User.findById(req.params.ownerId);
-    
-    if (!targetUser) {
-        return res.redirect('/chat'); 
-    }
-    
-    const roomId = getRoomId(res.locals.userId, targetUser._id.toString());
-
-    res.render('chat-private', { 
-        title: `Chat cu ${targetUser.fullName}`, 
-        roomId, 
-        targetUserId: targetUser._id.toString(),
-        targetUserName: targetUser.fullName
-    });
-});
-
-// =================================================================
-// 8. RUTA API PENTRU CĂUTARE (Cerința 1.3)
-// =================================================================
-app.get('/api/search', async (req, res) => {
-    const query = req.query.plate ? req.query.plate.toUpperCase().replace(/\s/g, '') : '';
-    
-    if (query.length < 2) {
-        return res.json([]);
-    }
-    
-    try {
-        const cars = await Car.find({
-            plateNumber: { $regex: '^' + query, $options: 'i' }
-        }).select('plateNumber make model'); // returnăm doar câmpurile necesare
-        
-        res.json(cars);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Eroare la căutare.' });
-    }
-});
-
-
-// =================================================================
-// 9. PORNIRE SERVER
-// =================================================================
-
+ 
+// --- SERVER START ---
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Serverul rulează pe portul http://localhost:${PORT}`);
 });
