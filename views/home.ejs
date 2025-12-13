@@ -67,9 +67,36 @@
 
 <%- include('partials/footer') %>
 <script>
-    // Logica pentru a afișa mesajul de succes dacă există un parametru 'success'
+    const searchInput = document.getElementById('plate-search');
+    const clearBtn = document.getElementById('clear-search');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function (e) {
+            // 1. Transformăm în litere mari și eliminăm caracterele interzise
+            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // 2. Extragem literele (primele 3)
+            let letters = val.slice(0, 3).replace(/[^A-Z]/g, '');
+            
+            // 3. Extragem cifrele (următoarele 3)
+            // Această linie permite tastarea cifrelor imediat după ce ai 1, 2 sau 3 litere
+            let numbers = val.slice(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
+            
+            // 4. Reconstruim valoarea finală cu spațiu între ele
+            e.target.value = letters + (numbers.length > 0 ? " " : "") + numbers;
+        });
+    }
+
+    // Butonul de ștergere (Clear)
+    if (clearBtn && searchInput) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            // Dacă ai logică de search live, aici ar trebui să resetezi și rezultatele
+        });
+    }
+
+    // Logica ta existentă pentru mesajul de succes
     if (window.location.search.includes('success=MasinaÎnregistrată')) {
-        // Redirecționează la pagina Acasă goală (pentru curățenie)
         setTimeout(() => {
             window.history.replaceState({}, document.title, "/");
         }, 100);

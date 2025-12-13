@@ -62,26 +62,56 @@
 
 <script>
 const makeSelect = document.getElementById('make');
-const modelSelect = document.getElementById('model');
+    const modelSelect = document.getElementById('model');
+    const plateInput = document.getElementById('plateNumber'); // Selectăm câmpul de număr
 
-const modelsData = {
-    "Audi": ["A3","A4","A6","Q5"],
-    "BMW": ["X1","X3","X5","M3"],
-    "Mercedes": ["C200","E300","S500"],
-    "Volkswagen": ["Golf","Passat","Tiguan"],
-    "Toyota": ["Corolla", "Camry", "RAV4"],
-    "Honda": ["Civic", "Accord", "CR-V"]
-};
-
-if(makeSelect){
-    makeSelect.addEventListener('change', () => {
-        modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-        const models = modelsData[makeSelect.value] || [];
-        models.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m; option.text = m;
-            modelSelect.add(option);
+    // --- 1. LOGICA PENTRU FORMATARE NUMĂR (Litere mari + Cifre) ---
+    if (plateInput) {
+        plateInput.addEventListener('input', function (e) {
+            // Transformăm în litere mari și eliminăm tot ce nu e literă sau cifră
+            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // Extragem primele 3 caractere (doar litere)
+            let letters = val.slice(0, 3).replace(/[^A-Z]/g, '');
+            
+            // Extragem următoarele 3 caractere (doar cifre)
+            // slice pornește exact de unde s-au terminat literele introduse
+            let numbers = val.slice(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
+            
+            // Reconstruim valoarea finală: Litere + Spațiu (dacă există cifre) + Cifre
+            e.target.value = letters + (numbers.length > 0 ? " " : "") + numbers;
         });
+    }
+
+    // --- 2. LOGICA EXISTENTĂ PENTRU MODELE ---
+    const modelsData = {
+        "Audi": ["A3","A4","A6","Q5"],
+        "BMW": ["X1","X3","X5","M3"],
+        "Mercedes": ["C200","E300","S500"],
+        "Volkswagen": ["Golf","Passat","Tiguan"],
+        "Toyota": ["Corolla", "Camry", "RAV4"],
+        "Honda": ["Civic", "Accord", "CR-V"]
+    };
+
+    if(makeSelect){
+        makeSelect.addEventListener('change', () => {
+            modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
+            const models = modelsData[makeSelect.value] || [];
+            models.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m; option.text = m;
+                modelSelect.add(option);
+            });
+        });
+    }
+// Validare pentru numărul de imagini
+const carImageInput = document.getElementById('carImage');
+if (carImageInput) {
+    carImageInput.addEventListener('change', function() {
+        if (this.files.length > 3) {
+            alert("Poți selecta maxim 3 imagini!");
+            this.value = ""; // Resetează selecția
+        }
     });
 }
 </script>
