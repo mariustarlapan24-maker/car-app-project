@@ -1,41 +1,71 @@
 <%- include('partials/header', { title: 'Detalii Mașină' }) %>
 
-<div class="row justify-content-center mt-5">
-    <div class="col-12 col-md-8 col-lg-6">
-        <h2 class="text-center mb-4 fw-bold">Detalii mașină</h2>
+<div class="container mt-5 mb-5">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary">Detalii mașină</h2>
+    </div>
 
-        <div class="card shadow-lg border-0 mb-4">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
                 
-                <div class="d-flex align-items-center">
-                    <div class="d-flex flex-column align-items-center me-3">
-                        <img src="/images/drapel-md.png" alt="MD" style="width: 25px;">
-                        <span class="fw-bold" style="font-size: 0.7em;">MD</span>
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3 px-4">
+                    <div class="d-flex flex-column align-items-center border-end pe-3" style="min-width: 60px;">
+                        <img src="/img/drapel-md.png" alt="MD" style="width: 30px; height: auto;">
+                        <span class="fw-bold mt-1" style="font-size: 0.75em; color: #555;">MD</span>
                     </div>
-                    <div class="fs-3 fw-bolder"><%= car.plateNumber %></div>
-                </div>
-            </div>
-            
-            <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="<%= car.make %> <%= car.model %>" style="height: 300px; object-fit: cover;">
-            
-            <div class="card-body">
-                <h5 class="card-title text-center fs-3 fw-bold mb-4"><%= car.make %> <%= car.model %></h5>
-
-                <div class="d-flex justify-content-between align-items-center p-3 border rounded bg-light">
-                    <h6 class="mb-0 fw-bold text-dark">Contactează proprietarul:</h6>
                     
-                    <% if (!isOwner && !isGuest) { %>
-                        <a href="/chat/private/<%= ownerId %>" class="btn btn-primary btn-lg shadow">
-                            <i class="bi bi-chat-dots-fill me-2"></i> Chat
-                        </a>
-                    <% } else if (isOwner) { %>
-                        <span class="badge bg-success p-2">E mașina ta</span>
+                    <div class="flex-grow-1 text-center">
+                        <span class="h2 fw-bold text-dark mb-0" style="letter-spacing: 3px; font-family: 'Roboto Mono', monospace;">
+                            <%= car.plateNumber %>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="car-image-box bg-light border-top border-bottom" style="height: 350px; overflow: hidden;">
+                    <% if (car.imageUrls && car.imageUrls.length > 0) { %>
+                        <img src="<%= car.imageUrls[0] %>" class="w-100 h-100" style="object-fit: cover;" alt="Imagine Mașină">
+                    <% } else if (car.imageUrl) { %>
+                        <img src="<%= car.imageUrl %>" class="w-100 h-100" style="object-fit: cover;" alt="Imagine Mașină">
                     <% } else { %>
-                        <a href="/login" class="btn btn-secondary btn-sm">
-                            Login pentru Chat
-                        </a>
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted italic">
+                            <i class="bi bi-image me-2"></i> Imagine neisponibilă
+                        </div>
                     <% } %>
                 </div>
+
+                <div class="card-body p-4 text-center">
+                    <h3 class="fw-bold text-dark mb-1">
+                        <%= car.make %> <%= car.model %>
+                    </h3>
+                    <p class="text-muted mb-4">Informații furnizate de proprietar</p>
+                    
+                    <hr class="my-4 text-muted opacity-25">
+
+                    <div class="chat-section d-flex justify-content-between align-items-center p-3 rounded-4" style="background-color: #f8f9fa;">
+                        <div class="text-start">
+                            <h6 class="mb-0 fw-bold text-dark">Contactează proprietarul</h6>
+                            <small class="text-muted">Trimite un mesaj urgent</small>
+                        </div>
+                        
+                        <div class="action-btn">
+                            <% if (locals.isOwner) { %>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">E mașina ta</span>
+                            <% } else { %>
+                                <a href="/chat/private/<%= car.ownerEmail %>" class="btn btn-primary btn-lg rounded-circle shadow d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                                    <i class="bi bi-chat-dots-fill fs-4"></i>
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="/" class="btn btn-link text-decoration-none text-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Înapoi la căutare
+                </a>
             </div>
         </div>
     </div>

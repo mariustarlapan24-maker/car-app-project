@@ -1,87 +1,75 @@
-<%- include('partials/header', { title: `Chat cu ${targetUserName}` }) %>
+<%- include('partials/header', { title: 'Mesaje' }) %>
 
-<style>
-    /* Stil pentru a defini zona de mesaje pe ecran */
-    .messages-box {
-        height: 65vh; 
-        overflow-y: auto; 
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-        padding: 15px;
-        display: flex;
-        flex-direction: column; 
-    }
-    .chat-msg {
-        max-width: 80%;
-        padding: 8px 12px;
-        border-radius: 15px;
-        margin-bottom: 8px;
-    }
-    .chat-msg strong { font-weight: bold; margin-right: 5px; }
-    .chat-msg .time { font-size: 0.75em; color: #6c757d; float: right; margin-left: 10px; }
-    
-    .own-msg { align-self: flex-end; background-color: #0d6efd; color: white; }
-    .other-msg { align-self: flex-start; background-color: #f8f9fa; border: 1px solid #e9ecef; }
-</style>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 d-flex flex-column" style="height: 80vh;">
+                
+                <div class="card-header bg-primary text-white p-3 rounded-top-4 d-flex align-items-center">
+                    <a href="javascript:history.back()" class="text-white me-3"><i class="bi bi-arrow-left fs-4"></i></a>
+                    <div>
+                        <div class="fw-bold">Contact: <%= receiverEmail %></div>
+                        <small class="opacity-75">Activ acum</small>
+                    </div>
+                </div>
 
-<div class="row justify-content-center">
-    <div class="col-12 col-md-8">
-        <h2 class="text-center mb-4 fw-bold">Chat cu <%= targetUserName %></h2>
-        
-        <div id="messages" class="messages-box shadow-sm">
+                <div id="chat-box" class="card-body overflow-auto p-4 bg-light flex-grow-1">
+                    <% if (messages.length > 0) { %>
+                        <% messages.forEach(msg => { %>
+                            <div class="d-flex <%= msg.sender === 'utilizator@test.com' ? 'justify-content-end' : 'justify-content-start' %> mb-3">
+                                <div class="p-3 rounded-4 shadow-sm <%= msg.sender === 'utilizator@test.com' ? 'bg-primary text-white' : 'bg-white text-dark' %>" style="max-width: 80%;">
+                                    <%= msg.text %>
+                                    <div class="text-end mt-1" style="font-size: 0.6em; opacity: 0.7;">
+                                        <%= new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="text-center text-muted mt-5">
+                            <i class="bi bi-chat-dots fs-1 d-block mb-2"></i>
+                            <p>Începe o conversație despre automobil.</p>
+                        </div>
+                    <% } %>
+                </div>
+
+                <div class="card-footer bg-white p-3 border-0 rounded-bottom-4">
+                    <form id="chat-form" class="input-group">
+                        <input type="text" id="message-input" class="form-control rounded-pill bg-light border-0 py-2 px-4 shadow-none" placeholder="Scrie un mesaj...">
+                        <button type="submit" class="btn btn-primary rounded-circle ms-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
         </div>
-        
-        <form id="chat-form" class="input-group mb-3">
-            <input id="msg" type="text" class="form-control" placeholder="Scrie mesajul..." required autocomplete="off">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-send-fill"></i> Trimite
-            </button>
-        </form>
     </div>
 </div>
 
 <script>
-const socket = io();
-const roomId = "<%= roomId %>"; 
-const senderId = "<%= userId %>"; 
-const senderName = "<%= username %>"; 
+    // Scroll automat la ultimul mesaj
+    const chatBox = document.getElementById('chat-box');
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-socket.emit('joinRoom', roomId);
+    // Logica simplă de trimitere (fără refresh)
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const input = document.getElementById('message-input');
+        if(!input.value.trim()) return;
 
-const form = document.getElementById('chat-form');
-const messagesDiv = document.getElementById('messages');
-
-form.addEventListener('submit', e => {
-    e.preventDefault();
-    const msgInput = document.getElementById('msg');
-    const msg = msgInput.value.trim();
-    
-    if (msg) {
-        socket.emit('chatMessage', { message: msg, senderId, senderName, roomId });
-        msgInput.value = ''; 
-    }
-});
-
-socket.on('message', data => {
-    const div = document.createElement('div');
-    
-    if (data.senderId === senderId) {
-        div.classList.add('own-msg');
-    } else {
-        div.classList.add('other-msg'); 
-    }
-    
-    div.classList.add('chat-msg');
-    
-    div.innerHTML = `
-        <strong>${data.sender}:</strong> 
-        ${data.text} 
-        <span class="time">${data.time}</span>
-    `;
-    
-    messagesDiv.appendChild(div);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
+        // Aici am adăuga mesajul vizual imediat (UI update)
+        const newMsg = `
+            <div class="d-flex justify-content-end mb-3">
+                <div class="p-3 rounded-4 shadow-sm bg-primary text-white" style="max-width: 80%;">
+                    ${input.value}
+                    <div class="text-end mt-1" style="font-size: 0.6em; opacity: 0.7;">Acum</div>
+                </div>
+            </div>`;
+        chatBox.insertAdjacentHTML('beforeend', newMsg);
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
 </script>
 
 <%- include('partials/footer') %>

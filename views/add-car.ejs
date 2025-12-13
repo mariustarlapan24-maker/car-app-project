@@ -12,6 +12,18 @@
             <% } %>
 
             <form action="/add-car" method="POST" enctype="multipart/form-data" id="addCarForm">
+                
+                <div class="mb-3">
+                    <label for="ownerEmail" class="form-label fw-bold">Email-ul tău</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" name="ownerEmail" id="ownerEmail" 
+                               class="form-control" placeholder="exemplu@email.com" 
+                               required>
+                    </div>
+                    <div class="form-text">Vei fi contactat prin acest email de către alți utilizatori.</div>
+                </div>
+
                 <div class="mb-3">
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare (Format MD)</label>
                     <div class="input-group input-group-lg">
@@ -23,19 +35,10 @@
                         </span>
                         <input type="text" name="plateNumber" id="plateNumber" 
                                class="form-control fw-bold text-primary" 
-                               placeholder="Ex: ABC 123" 
+                               placeholder="ABC 123" 
                                maxlength="8" 
                                style="letter-spacing: 1px;"
                                required autocomplete="off">
-                    </div>
-                    <div class="form-text">Format obligatoriu: 3 litere + spațiu + 1-3 cifre.</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Tip Vehicul</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-truck-flatbed"></i></span>
-                        <input type="text" class="form-control bg-white" value="Autoturism" disabled>
                     </div>
                 </div>
 
@@ -62,10 +65,10 @@
                 <div class="mb-4">
                     <label for="carImage" class="form-label fw-bold">Imagini Mașină (Max 3)</label>
                     <input type="file" name="carImage" id="carImage" class="form-control" accept="image/*" multiple required>
-                    <div id="fileLimitMessage" class="form-text text-muted">Puteți selecta între 1 și 3 imagini.</div>
+                    <div class="form-text text-muted">Imaginile vor fi procesate prin ImageKit.io.</div>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm">
+                <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm rounded-pill">
                     <i class="bi bi-plus-circle me-2"></i>Salvează Mașina
                 </button>
             </form>
@@ -74,10 +77,9 @@
 </div>
 
 <script>
-    // 1. Logica pentru Select Dinamic (Marci și Modele)
+    // --- Logica Select Dinamic ---
     const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
-
     const modelsData = {
         "Audi": ["A3", "A4", "A6", "Q5", "Q7"],
         "BMW": ["X1", "X3", "X5", "M3", "M5"],
@@ -87,63 +89,30 @@
         "Honda": ["Civic", "Accord", "CR-V", "HR-V"]
     };
 
-    if (makeSelect) {
-        makeSelect.addEventListener('change', () => {
-            modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-            const models = modelsData[makeSelect.value] || [];
-            models.forEach(m => {
-                const option = document.createElement('option');
-                option.value = m;
-                option.text = m;
-                modelSelect.add(option);
-            });
+    makeSelect.addEventListener('change', () => {
+        modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
+        (modelsData[makeSelect.value] || []).forEach(m => {
+            const opt = new Option(m, m);
+            modelSelect.add(opt);
         });
-    }
+    });
 
-    // 2. Limitare fișiere (Maxim 3 imagini)
-    const carImageInput = document.getElementById('carImage');
-    if (carImageInput) {
-        carImageInput.addEventListener('change', function() {
-            if (this.files.length > 3) {
-                alert("Puteți selecta maximum 3 imagini!");
-                this.value = "";
-            }
-        });
-    }
+    // --- Limitare Imagini ---
+    document.getElementById('carImage').addEventListener('change', function() {
+        if (this.files.length > 3) {
+            alert("Maximum 3 imagini permise!");
+            this.value = "";
+        }
+    });
 
-    // 3. Logica de formatare "ABC 123" - REPARATĂ PENTRU A EVITA HAOSUL
+    // --- Formatare Automată Număr ---
     const plateInput = document.getElementById('plateNumber');
-    if (plateInput) {
-        plateInput.addEventListener('input', (e) => {
-            let el = e.target;
-            let cursor = el.selectionStart;
-            
-            // Pasul 1: Curățăm tot ce nu e literă sau cifră și facem litere MARI
-            let raw = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            
-            // Pasul 2: Extragem separat literele (primele 3) și cifrele (următoarele 3)
-            let letters = raw.replace(/[0-9]/g, '').substring(0, 3);
-            let numbers = raw.replace(/[A-Z]/g, '').substring(0, 3);
-
-            let finalValue = letters;
-            // Pasul 3: Adăugăm spațiul doar dacă avem exact 3 litere și urmează cifre
-            if (letters.length === 3 && numbers.length > 0) {
-                finalValue += ' ' + numbers;
-            } else {
-                finalValue += numbers;
-            }
-
-            // Aplicăm valoarea formatată
-            let oldLength = el.value.length;
-            el.value = finalValue;
-
-            // Pasul 4: Corecție poziție cursor pentru experiență fluidă
-            if (finalValue.length > oldLength && finalValue.charAt(cursor - 1) === ' ') {
-                cursor++;
-            }
-            el.setSelectionRange(cursor, cursor);
-        });
-    }
+    plateInput.addEventListener('input', (e) => {
+        let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        let letters = val.replace(/[0-9]/g, '').substring(0, 3);
+        let numbers = val.replace(/[A-Z]/g, '').substring(0, 3);
+        e.target.value = letters + (letters.length === 3 && numbers.length > 0 ? ' ' + numbers : numbers);
+    });
 </script>
 
 <%- include('partials/footer') %>

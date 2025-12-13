@@ -12,7 +12,7 @@
         <div class="input-group position-relative shadow-lg rounded-pill bg-white p-1">
             <span class="input-group-text bg-transparent border-0 ps-4">
                 <div class="d-flex flex-column align-items-center">
-                    <img src="/img/drapel-md.png" style="width: 22px;">
+                    <img src="/img/drapel-md.png" style="width: 22px;" alt="MD">
                     <span class="fw-bold text-dark" style="font-size: 0.65em; line-height: 1;">MD</span>
                 </div>
             </span>
@@ -41,11 +41,12 @@
     <% if (cars && cars.length > 0) { %>
         <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
             <% cars.forEach(car => { %>
-                <div class="col car-item" data-plate="<%= car.plateNumber %>">
+                <div class="col car-item">
                     <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block h-100">
                         <div class="card shadow-sm h-100 border-0 overflow-hidden card-hover">
-                            <img src="<%= car.imageUrls[0] %>" class="card-img-top" 
-                                 alt="<%= car.make %> <%= car.model %>" 
+                            <img src="<%= (car.imageUrls && car.imageUrls.length > 0) ? car.imageUrls[0] : '/img/default-car.png' %>" 
+                                 class="card-img-top" 
+                                 alt="<%= car.make %>" 
                                  style="height: 120px; object-fit: cover;">
                             
                             <div class="card-body p-2 position-relative">
@@ -53,11 +54,11 @@
                                 
                                 <div class="d-flex align-items-center">
                                     <div class="d-flex flex-column align-items-center me-2 border-end pe-2">
-                                        <img src="/img/drapel-md.png" style="width: 18px;">
+                                        <img src="/img/drapel-md.png" style="width: 18px;" alt="MD">
                                         <span class="fw-bold" style="font-size: 0.55em;">MD</span>
                                     </div>
-                                    <div>
-                                        <div class="fw-bold text-primary" style="font-size: 0.95em;">
+                                    <div class="text-truncate">
+                                        <div class="fw-bold text-primary" style="font-size: 0.95em; line-height: 1.1;">
                                             <%= car.plateNumber %>
                                         </div>
                                         <div class="text-muted text-truncate" style="font-size: 0.75em; max-width: 90px;">
@@ -72,7 +73,7 @@
             <% }) %>
         </div>
     <% } else { %>
-        <div class="alert alert-light text-center py-5 shadow-sm">
+        <div class="alert alert-light text-center py-5 shadow-sm rounded-4">
             <i class="bi bi-car-front fs-1 text-muted d-block mb-3"></i>
             Nu există mașini înregistrate încă.
         </div>
@@ -99,7 +100,6 @@
             let cursor = e.target.selectionStart;
             let rawValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
             
-            // Logica LLL NNN
             let letters = rawValue.replace(/[0-9]/g, '').substring(0, 3);
             let numbers = rawValue.replace(/[A-Z]/g, '').substring(0, 3);
             
@@ -113,12 +113,10 @@
             let oldLen = e.target.value.length;
             e.target.value = formatted;
             
-            // Fix cursor position if space added
             if (formatted.length > oldLen && formatted.charAt(cursor - 1) === ' ') cursor++;
             e.target.setSelectionRange(cursor, cursor);
 
-            // LOGICA DE CĂUTARE
-            const query = formatted.replace(/\s/g, ''); // Trimitem la server fără spațiu
+            const query = formatted.replace(/\s/g, ''); 
             if (query.length < 2) {
                 resultsList.style.display = 'none';
                 return;
@@ -132,7 +130,7 @@
                     resultsList.innerHTML = cars.map(car => `
                         <li class="list-group-item list-group-item-action d-flex align-items-center py-2" 
                             onclick="window.location.href='/car/${car._id}'" style="cursor:pointer">
-                            <div class="d-flex flex-column align-items-center me-3 border-end pe-2">
+                            <div class="d-flex flex-column align-items-center me-3 border-end pe-2" style="min-width: 40px;">
                                 <img src="/img/drapel-md.png" style="width:20px">
                                 <span class="fw-bold" style="font-size:0.6em">MD</span>
                             </div>
@@ -144,7 +142,7 @@
                     `).join('');
                     resultsList.style.display = 'block';
                 } else {
-                    resultsList.innerHTML = '<li class="list-group-item text-muted text-center">Nicio mașină găsită</li>';
+                    resultsList.innerHTML = '<li class="list-group-item text-muted text-center py-3">Nicio mașină găsită</li>';
                     resultsList.style.display = 'block';
                 }
             } catch (err) {
@@ -162,9 +160,9 @@
         });
     }
 
-    // 4. Închidere la click în exterior
+    // 4. Închidere listă la click în exterior
     document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+        if (searchInput && resultsList && !searchInput.contains(e.target) && !resultsList.contains(e.target)) {
             resultsList.style.display = 'none';
         }
     });
