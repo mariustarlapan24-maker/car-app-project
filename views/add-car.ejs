@@ -5,6 +5,10 @@
         <div class="card shadow-lg p-4 border-0">
             <h2 class="card-title text-center mb-4 fw-bold">Adaugă o Mașină</h2>
             
+            <% if(typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger" role="alert"><%= error %></div>
+            <% } %>
+            
             <form action="/add-car" method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare</label>
@@ -13,7 +17,13 @@
                             <img src="/img/drapel-md.png" style="width: 20px;">
                             <span class="fw-bold ms-1">MD</span>
                         </span>
-                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" placeholder="ABC 123" required autocomplete="off">
+                        <input type="text" 
+                               name="plateNumber" 
+                               id="plateNumber" 
+                               class="form-control form-control-lg" 
+                               placeholder="Ex: ABC 123" 
+                               required 
+                               autocomplete="off">
                     </div>
                 </div>
 
@@ -49,43 +59,44 @@
 <script>
     const plateInput = document.getElementById('plateNumber');
 
-    // SOLUȚIA ANTI-BLOCAJ: Folosim un flag pentru a preveni auto-declanșarea
-    let isFormatting = false;
-
     if (plateInput) {
-        plateInput.addEventListener('input', function(e) {
-            if (isFormatting) return; // Dacă scriptul deja lucrează, ieșim
-            
-            isFormatting = true; // Blocăm alte execuții paralele
+        // Folosim onkeyup pentru a procesa textul după ce tasta a fost eliberată
+        plateInput.addEventListener('keyup', function(e) {
+            // Ignorăm tastele de control (Săgeți, Backspace, etc.)
+            if (["ArrowLeft", "ArrowRight", "Backspace", "Tab"].includes(e.key)) return;
 
-            let input = e.target;
-            let start = input.selectionStart;
-            let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
             
             // Limităm la 6 caractere brute
-            val = val.substring(0, 6);
+            if (val.length > 6) val = val.substring(0, 6);
 
-            // Separăm literele de cifre
-            let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
-            let numbers = val.substring(letters.length).replace(/[^0-9]/g, '');
-            
-            let formatted = letters;
-            if (numbers.length > 0) {
-                formatted += " " + numbers;
+            let formatted = "";
+            if (val.length > 3) {
+                // Dacă avem mai mult de 3 caractere, forțăm formatul "AAA 111"
+                let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
+                let numbers = val.substring(3).replace(/[^0-9]/g, '');
+                formatted = letters + (numbers.length > 0 ? " " + numbers : "");
+            } else {
+                // Altfel, doar litere mari
+                formatted = val.replace(/[^A-Z]/g, '');
             }
 
-            // Aplicăm valoarea
-            input.value = formatted;
+            // Actualizăm doar dacă este necesar
+            if (this.value !== formatted) {
+                this.value = formatted;
+            }
+        });
 
-            // Repoziționăm cursorul corect
-            if (val.length > 3 && start === 4) start++;
-            input.setSelectionRange(start, start);
-
-            isFormatting = false; // Deblocăm scriptul pentru următoarea tastă
+        // Prevenim introducerea de caractere invalide direct (opțional)
+        plateInput.addEventListener('keypress', function(e) {
+            const char = String.fromCharCode(e.which);
+            if (!/[A-Za-z0-9]/.test(char)) {
+                e.preventDefault();
+            }
         });
     }
 
-    // Logica pentru modele (simplificată pentru test)
+    // Logica pentru modele (nemanipulată)
     const modelsData = {
         "Audi": ["A3","A4","A6","Q5"],
         "BMW": ["X1","X3","X5","M3"],

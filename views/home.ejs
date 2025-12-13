@@ -18,7 +18,7 @@
             </span>
             
             <input type="text" id="plate-search" name="plateNumber" class="form-control rounded-0 border-0" 
-                   placeholder="Caută după număr (Ex: ABC 123)" style="height: 50px;">
+                   placeholder="Caută după număr (Ex: ABC 123)" style="height: 50px;" autocomplete="off">
                    
             <button id="clear-search" class="btn btn-transparent rounded-end-pill" type="button">
                 <i class="bi bi-x-lg"></i>
@@ -32,7 +32,7 @@
 <h2 class="text-center mb-4 fw-bold">Lista Tuturor Mașinilor</h2>
 
 <div class="cars-grid-container">
-    <% if (cars.length > 0) { %>
+    <% if (cars && cars.length > 0) { %>
         <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
             <% cars.forEach(car => { %>
                 <div class="col">
@@ -67,23 +67,38 @@
     const searchInput = document.getElementById('plate-search');
     const clearBtn = document.getElementById('clear-search');
 
+    // Flag pentru a preveni bucla infinită de evenimente (recursion)
+    let isProcessing = false;
+
     if (searchInput) {
         searchInput.addEventListener('input', function (e) {
-            // 1. Curățăm spațiile și limităm la 6 caractere brute
-            let val = e.target.value.toUpperCase().replace(/\s/g, '').replace(/[^A-Z0-9]/g, '').substring(0, 6);
+            if (isProcessing) return;
+            
+            isProcessing = true;
+
+            // 1. Curățăm intrarea (doar litere și cifre, max 6 caractere brute)
+            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
             
             // 2. Extragem literele (primele 3)
             let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
             
-            // 3. Extragem cifrele (restul după litere)
+            // 3. Extragem cifrele (restul)
             let numbers = val.substring(letters.length).replace(/[^0-9]/g, '');
             
-            // 4. Formăm rezultatul cu spațiu
+            // 4. Formăm rezultatul final: AAA 111
             let formatted = letters;
             if (numbers.length > 0) {
                 formatted += " " + numbers;
             }
-            e.target.value = formatted;
+
+            // 5. Actualizăm valoarea câmpului doar dacă s-a schimbat
+            if (e.target.value !== formatted) {
+                e.target.value = formatted;
+            }
+
+            isProcessing = false;
+            
+            // Aici poți adăuga logica de filtrare AJAX pentru rezultate, dacă ai una
         });
     }
 
@@ -91,6 +106,9 @@
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
             searchInput.focus();
+            // Dacă ai rezultate de căutare afișate, ascunde-le aici
+            const results = document.getElementById('search-results');
+            if (results) results.innerHTML = '';
         });
     }
 </script>
