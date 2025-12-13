@@ -61,29 +61,33 @@
 </div>
 
 <script>
-const makeSelect = document.getElementById('make');
+    const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
-    const plateInput = document.getElementById('plateNumber'); // Selectăm câmpul de număr
+    const plateInput = document.getElementById('plateNumber');
 
-    // --- 1. LOGICA PENTRU FORMATARE NUMĂR (Litere mari + Cifre) ---
+    // --- 1. LOGICA NOUĂ ȘI REPARATĂ PENTRU NUMĂR ---
     if (plateInput) {
         plateInput.addEventListener('input', function (e) {
-            // Transformăm în litere mari și eliminăm tot ce nu e literă sau cifră
-            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            // Eliminăm orice spațiu existent și facem litere mari
+            let val = e.target.value.toUpperCase().replace(/\s/g, '');
             
-            // Extragem primele 3 caractere (doar litere)
-            let letters = val.slice(0, 3).replace(/[^A-Z]/g, '');
+            // Reținem doar literele (primele 3)
+            let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
             
-            // Extragem următoarele 3 caractere (doar cifre)
-            // slice pornește exact de unde s-au terminat literele introduse
-            let numbers = val.slice(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
+            // Reținem cifrele (următoarele 3), pornind de unde s-au terminat literele
+            let numbers = val.substring(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
             
-            // Reconstruim valoarea finală: Litere + Spațiu (dacă există cifre) + Cifre
-            e.target.value = letters + (numbers.length > 0 ? " " : "") + numbers;
+            // Reconstruim string-ul final: Litere + Spațiu (dacă avem cifre) + Cifre
+            let formatted = letters;
+            if (numbers.length > 0) {
+                formatted += " " + numbers;
+            }
+            
+            e.target.value = formatted;
         });
     }
 
-    // --- 2. LOGICA EXISTENTĂ PENTRU MODELE ---
+    // --- 2. LOGICA PENTRU MODELE (Rămâne neschimbată) ---
     const modelsData = {
         "Audi": ["A3","A4","A6","Q5"],
         "BMW": ["X1","X3","X5","M3"],
@@ -104,16 +108,17 @@ const makeSelect = document.getElementById('make');
             });
         });
     }
-// Validare pentru numărul de imagini
-const carImageInput = document.getElementById('carImage');
-if (carImageInput) {
-    carImageInput.addEventListener('change', function() {
-        if (this.files.length > 3) {
-            alert("Poți selecta maxim 3 imagini!");
-            this.value = ""; // Resetează selecția
-        }
-    });
-}
+
+    // --- 3. VALIDARE IMAGINI ---
+    const carImageInput = document.getElementById('carImage');
+    if (carImageInput) {
+        carImageInput.addEventListener('change', function() {
+            if (this.files.length > 3) {
+                alert("Poți selecta maxim 3 imagini!");
+                this.value = ""; 
+            }
+        });
+    }
 </script>
 
 <%- include('partials/footer') %>

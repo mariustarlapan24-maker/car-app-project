@@ -72,30 +72,35 @@
 
     if (searchInput) {
         searchInput.addEventListener('input', function (e) {
-            // 1. Transformăm în litere mari și eliminăm caracterele interzise
-            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            // 1. Luăm valoarea, o facem mare și scoatem orice spațiu existent
+            let val = e.target.value.toUpperCase().replace(/\s/g, '');
             
-            // 2. Extragem literele (primele 3)
-            let letters = val.slice(0, 3).replace(/[^A-Z]/g, '');
+            // 2. Extragem doar literele (primele 3)
+            let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
             
-            // 3. Extragem cifrele (următoarele 3)
-            // Această linie permite tastarea cifrelor imediat după ce ai 1, 2 sau 3 litere
-            let numbers = val.slice(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
+            // 3. Extragem doar cifrele (următoarele 3), pornind de după litere
+            // val.substring(letters.length) ne asigură că sărim peste litere și luăm restul ca cifre
+            let numbers = val.substring(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
             
-            // 4. Reconstruim valoarea finală cu spațiu între ele
-            e.target.value = letters + (numbers.length > 0 ? " " : "") + numbers;
+            // 4. Reconstruim valoarea cu un spațiu între ele dacă avem cifre
+            let formattedValue = letters;
+            if (numbers.length > 0) {
+                formattedValue += " " + numbers;
+            }
+            
+            e.target.value = formattedValue;
         });
     }
 
-    // Butonul de ștergere (Clear)
+    // Resetare căutare
     if (clearBtn && searchInput) {
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
-            // Dacă ai logică de search live, aici ar trebui să resetezi și rezultatele
+            searchInput.focus();
         });
     }
 
-    // Logica ta existentă pentru mesajul de succes
+    // Curățare URL mesaj succes
     if (window.location.search.includes('success=MasinaÎnregistrată')) {
         setTimeout(() => {
             window.history.replaceState({}, document.title, "/");
