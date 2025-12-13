@@ -11,8 +11,8 @@
     <div class="col-12 col-md-8 col-lg-6">
         <div class="input-group position-relative shadow-lg rounded-pill bg-white p-1">
             <span class="input-group-text bg-transparent border-0 ps-4">
-                <div class="d-flex flex-column align-items-center flag-input-box">
-                    <img src="/img/drapel-md.png" class="flag-icon" style="width: 22px;">
+                <div class="d-flex flex-column align-items-center">
+                    <img src="/img/drapel-md.png" style="width: 22px;">
                     <span class="fw-bold text-dark" style="font-size: 0.65em; line-height: 1;">MD</span>
                 </div>
             </span>
@@ -20,15 +20,16 @@
             <input type="text" id="plate-search" name="plateNumber" 
                    class="form-control border-0 py-3 shadow-none" 
                    placeholder="Caută număr (Ex: ABC 123)" 
-                   maxlength="7" 
-                   style="font-size: 1.1rem; background: transparent;">
+                   maxlength="8" 
+                   style="font-size: 1.1rem; background: transparent;"
+                   autocomplete="off">
             
             <button id="clear-search" class="btn btn-link text-muted pe-4" type="button">
                 <i class="bi bi-x-lg"></i>
             </button>
             
             <ul id="search-results" class="list-group position-absolute w-100 shadow-lg z-3" 
-                style="top: 105%; display: none; border-radius: 15px; overflow: hidden;">
+                style="top: 105%; display: none; border-radius: 15px; overflow: hidden; left: 0;">
             </ul>
         </div>
     </div>
@@ -40,7 +41,7 @@
     <% if (cars && cars.length > 0) { %>
         <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
             <% cars.forEach(car => { %>
-                <div class="col car-card-item" data-plate="<%= car.plateNumber %>">
+                <div class="col car-item" data-plate="<%= car.plateNumber %>">
                     <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block h-100">
                         <div class="card shadow-sm h-100 border-0 overflow-hidden card-hover">
                             <img src="<%= car.imageUrls[0] %>" class="card-img-top" 
@@ -56,7 +57,7 @@
                                         <span class="fw-bold" style="font-size: 0.55em;">MD</span>
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-primary plate-font" style="font-size: 0.95em;">
+                                        <div class="fw-bold text-primary" style="font-size: 0.95em;">
                                             <%= car.plateNumber %>
                                         </div>
                                         <div class="text-muted text-truncate" style="font-size: 0.75em; max-width: 90px;">
@@ -81,13 +82,90 @@
 <%- include('partials/footer') %>
 
 <script>
-    // 1. Scriptul pentru curățarea URL-ului după succes
+    const searchInput = document.getElementById('plate-search');
+    const resultsList = document.getElementById('search-results');
+    const clearBtn = document.getElementById('clear-search');
+
+    // 1. Curățare URL după succes
     if (window.location.search.includes('success')) {
         setTimeout(() => {
             window.history.replaceState({}, document.title, "/");
-        }, 2000); // Lăsăm mesajul 2 secunde înainte de a curăța URL-ul
+        }, 2000);
     }
 
-    // 2. Aici adaugi codul JavaScript FINAL pe care l-am discutat anterior
-    // (Cel care formatează input-ul cu spațiu ABC 123)
+    // 2. Formatare Automată (ABC 123) și Căutare
+    if (searchInput) {
+        searchInput.addEventListener('input', async (e) => {
+            let cursor = e.target.selectionStart;
+            let rawValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // Logica LLL NNN
+            let letters = rawValue.replace(/[0-9]/g, '').substring(0, 3);
+            let numbers = rawValue.replace(/[A-Z]/g, '').substring(0, 3);
+            
+            let formatted = letters;
+            if (letters.length === 3 && numbers.length > 0) {
+                formatted += ' ' + numbers;
+            } else {
+                formatted += numbers;
+            }
+
+            let oldLen = e.target.value.length;
+            e.target.value = formatted;
+            
+            // Fix cursor position if space added
+            if (formatted.length > oldLen && formatted.charAt(cursor - 1) === ' ') cursor++;
+            e.target.setSelectionRange(cursor, cursor);
+
+            // LOGICA DE CĂUTARE
+            const query = formatted.replace(/\s/g, ''); // Trimitem la server fără spațiu
+            if (query.length < 2) {
+                resultsList.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/search?plate=${query}`);
+                const cars = await res.json();
+
+                if (cars.length > 0) {
+                    resultsList.innerHTML = cars.map(car => `
+                        <li class="list-group-item list-group-item-action d-flex align-items-center py-2" 
+                            onclick="window.location.href='/car/${car._id}'" style="cursor:pointer">
+                            <div class="d-flex flex-column align-items-center me-3 border-end pe-2">
+                                <img src="/img/drapel-md.png" style="width:20px">
+                                <span class="fw-bold" style="font-size:0.6em">MD</span>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-primary">${car.plateNumber}</div>
+                                <small class="text-muted">${car.make} ${car.model}</small>
+                            </div>
+                        </li>
+                    `).join('');
+                    resultsList.style.display = 'block';
+                } else {
+                    resultsList.innerHTML = '<li class="list-group-item text-muted text-center">Nicio mașină găsită</li>';
+                    resultsList.style.display = 'block';
+                }
+            } catch (err) {
+                console.error("Eroare search:", err);
+            }
+        });
+    }
+
+    // 3. Buton Clear
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            resultsList.style.display = 'none';
+            searchInput.focus();
+        });
+    }
+
+    // 4. Închidere la click în exterior
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
 </script>
