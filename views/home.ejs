@@ -1,110 +1,63 @@
 <%- include('partials/header', { title: 'Acasă' }) %>
 
-<% if (typeof success !== 'undefined' && success) { %>
-    <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
-        Mașina a fost înregistrată cu succes!
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<% } %>
-
-<div class="row justify-content-center pt-5 pb-5"> 
-    <div class="col-12 col-md-8 col-lg-6">
-        <div class="input-group position-relative shadow-lg rounded-pill bg-white">
-            
-            <span class="input-group-text bg-transparent rounded-start-pill py-2 border-0">
-                <div class="d-flex flex-column align-items-center me-2 flag-input-box">
-                    <img src="/img/drapel-md.png" class="flag-icon me-1">
-                    <span class="fw-bold text-dark" style="font-size: 0.7em;">MD</span>
-                </div>
-            </span>
-            
-            <input
-                type="text"
-                id="plate-search"
-                name="plateNumber"
-                class="form-control rounded-0 border-0"
-                placeholder="Caută după număr (ABC 123)"
-                maxlength="7"
-                style="height: 50px;"
-            >
-                   
-            <button id="clear-search" class="btn btn-transparent rounded-end-pill" type="button">
-                <i class="bi bi-x-lg"></i>
-            </button>
-            
-            <ul id="search-results" class="list-group position-absolute w-100 mt-5 shadow-lg z-3"></ul>
-        </div>
-    </div>
-</div>
-
-<h2 class="text-center mb-4 fw-bold">Lista Tuturor Mașinilor</h2>
-
-<div class="cars-grid-container">
-    <% if (cars.length > 0) { %>
-        <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
-            <% cars.forEach(car => { %>
-                <div class="col">
-                    <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block">
-                        <div class="card shadow-sm h-100 border-0 overflow-hidden">
-                            <img
-                                src="<%= car.imageUrls[0] %>"
-                                class="card-img-top"
-                                alt="<%= car.make %> <%= car.model %>"
-                                style="height: 100px; object-fit: cover;"
-                            >
-                            <div class="card-body p-2 position-relative">
-                                
-                                <i class="bi bi-chevron-right position-absolute top-0 end-0 m-2 fs-6 text-primary"></i>
-                                
-                                <div class="d-flex align-items-start">
-                                    <div class="d-flex flex-column align-items-center me-2">
-                                        <img src="/img/drapel-md.png" class="flag-icon me-1">
-                                        <span class="fw-bold" style="font-size: 0.6em;">MD</span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold text-primary" style="font-size: 0.9em;">
-                                            <%= car.plateNumber %>
-                                        </div>
-                                        <div class="text-muted" style="font-size: 0.75em;">
-                                            <%= car.make %> <%= car.model %>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            <% }) %>
-        </div>
-    <% } else { %>
-        <p class="alert alert-info text-center">Nu există mașini înregistrate încă.</p>
+<div class="container mt-5">
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success text-center">Mașină înregistrată!</div>
     <% } %>
-</div>
 
-<%- include('partials/footer') %>
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-6 position-relative">
+            <div class="input-group shadow rounded-pill bg-white overflow-hidden">
+                <span class="input-group-text bg-white border-0 fw-bold px-3">MD</span>
+                <input type="text" id="plate-search" class="form-control border-0 py-3" placeholder="Caută ABC123" maxlength="6" autocomplete="off">
+                <button id="clear-search" class="btn border-0 px-3">X</button>
+            </div>
+            <ul id="search-results" class="list-group position-absolute w-100 mt-1 shadow-lg z-3" style="display:none;"></ul>
+        </div>
+    </div>
+
+    <div class="row row-cols-2 row-cols-md-4 g-3" id="cars-grid">
+        <% cars.forEach(car => { %>
+            <div class="col car-item" data-plate="<%= car.plateNumber %>">
+                <div class="card h-100 border-0 shadow-sm">
+                    <img src="<%= car.imageUrls[0] %>" class="card-img-top" style="height:120px; object-fit:cover;">
+                    <div class="card-body p-2 text-center">
+                        <div class="fw-bold text-primary"><%= car.plateNumber %></div>
+                        <small><%= car.make %> <%= car.model %></small>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div>
 
 <script>
-/* Curăță URL-ul de ?success=... */
-if (window.location.search.includes('success=MasinaÎnregistrată')) {
-    setTimeout(() => {
-        window.history.replaceState({}, document.title, "/");
-    }, 100);
-}
+    const search = document.getElementById('plate-search');
+    const results = document.getElementById('search-results');
+    const items = document.querySelectorAll('.car-item');
 
-/* FORMAT AUTOMAT NUMĂR: ABC 123 */
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('plate-search');
-    if (!input) return;
+    search.addEventListener('input', async function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        let v = this.value;
 
-    input.addEventListener('input', () => {
-        let raw = input.value
-            .toUpperCase()
-            .replace(/[^A-Z0-9]/g, '')
-            .slice(0, 6);
+        // Filtrare grid
+        items.forEach(it => it.style.display = it.getAttribute('data-plate').includes(v) ? 'block' : 'none');
 
-        input.value = raw.length > 3
-            ? raw.slice(0, 3) + ' ' + raw.slice(3)
-            : raw;
+        // Sugestii API
+        if (v.length >= 2) {
+            const res = await fetch(`/api/search?plate=${v}`);
+            const data = await res.json();
+            results.innerHTML = data.map(c => `<a href="#" class="list-group-item list-group-item-action">${c.plateNumber} - ${c.make}</a>`).join('');
+            results.style.display = 'block';
+        } else {
+            results.style.display = 'none';
+        }
     });
-});
+
+    document.getElementById('clear-search').addEventListener('click', () => {
+        search.value = '';
+        results.style.display = 'none';
+        items.forEach(it => it.style.display = 'block');
+    });
 </script>
+<%- include('partials/footer') %>

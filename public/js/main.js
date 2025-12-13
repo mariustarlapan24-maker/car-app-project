@@ -1,84 +1,67 @@
-// =================================================================
-// 1. LOGICĂ UNICĂ: FORMAT PLĂCI MD AUTOMAT (Cerința 1.2 & 5.2)
-// =================================================================
+const express = require('express');
+const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const app = express();
 
-document.querySelectorAll('input[name="plateNumber"]').forEach(input => {
-    input.addEventListener('input', e => {
-        let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        let formattedValue = '';
-        
-        // Extrage blocurile Litere și Cifre
-        let letters = value.match(/[A-Z]{0,3}/);
-        let numbers = value.match(/[0-9]{0,3}/);
-        
-        letters = letters ? letters[0] : '';
-        numbers = numbers ? numbers[0] : '';
+// 1. CONECTARE MONGODB
+mongoose.connect('mongodb://127.0.0.1:27017/nume_baza_ta')
+    .then(() => console.log('Baza de date conectata!'))
+    .catch(err => console.error('Eroare DB:', err));
 
-        // Aplică formatul LLL[SPAȚIU]NNN
-        if (letters.length > 0) {
-            formattedValue = letters;
-            if (numbers.length > 0) {
-                formattedValue += ' ' + numbers;
-            }
-        } else {
-            formattedValue = numbers;
-        }
+// 2. MODEL MAȘINĂ (Limitat la 6 caractere)
+const carSchema = new mongoose.Schema({
+    plateNumber: { type: String, required: true, uppercase: true, minlength: 6, maxlength: 6 },
+    make: String,
+    model: String,
+    imageUrls: [String]
+});
+const Car = mongoose.model('Car', carSchema);
 
-        e.target.value = formattedValue.trim();
-    });
+// 3. CONFIGURĂRI
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+
+const storage = multer.diskStorage({
+    destination: './public/uploads/',
+    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
+const upload = multer({ storage });
+
+// 4. RUTE
+app.get('/', async (req, res) => {
+    const cars = await Car.find();
+    res.render('home', { cars, success: req.query.success });
 });
 
+app.get('/add-car', (req, res) => res.render('add-car', { error: null }));
 
-// =================================================================
-// 2. LOGICĂ PENTRU CĂUTAREA DINAMICĂ (HOME.EJS - Cerința 1.3)
-// =================================================================
+app.post('/add-car', upload.array('carImage', 3), async (req, res) => {
+    try {
+        let { plateNumber, make, model } = req.body;
+        let cleanPlate = plateNumber.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-const searchInput = document.getElementById('plate-search');
-const resultsList = document.getElementById('search-results');
-const clearBtn = document.getElementById('clear-search');
-
-if(searchInput && clearBtn){
-    // Funcție Clear
-    clearBtn.addEventListener('click', () => { 
-        searchInput.value=''; 
-        resultsList.innerHTML=''; 
-        resultsList.classList.remove('show');
-    });
-    
-    // Funcție Căutare Dinamică
-    searchInput.addEventListener('input', async () => {
-        const query = searchInput.value.toUpperCase().replace(/\s/g, '').trim();
-        
-        if(query.length < 2) { 
-            resultsList.innerHTML=''; 
-            resultsList.classList.remove('show');
-            return; 
+        if (cleanPlate.length !== 6) {
+            return res.render('add-car', { error: 'Numărul trebuie să aibă exact 6 caractere!' });
         }
-        
-        const res = await fetch(`/api/search?plate=${query}`);
-        const cars = await res.json();
-        
-        if(cars.length) {
-             resultsList.innerHTML = cars.map(car => `
-                <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2">
-                    <div class="d-flex flex-column align-items-center me-3">
-                        <img src="/images/drapel-md.png" alt="MD" style="width: 20px;">
-                        <span class="fw-bold text-dark" style="font-size: 0.7em;">MD</span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="fw-bold text-primary">${car.plateNumber}</div>
-                        <small class="text-muted">${car.make} ${car.model}</small>
-                    </div>
-                    <a href="/car/${car._id}" class="text-primary fs-5 text-decoration-none">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            `).join('');
-            resultsList.classList.add('show');
-        } else {
-            // Caz Negativ (Cerința 1.3)
-            resultsList.innerHTML = '<li class="list-group-item text-muted text-center">Nicio mașină găsită</li>';
-            resultsList.classList.add('show');
-        }
-    });
-}
+
+        const newCar = new Car({
+            plateNumber: cleanPlate,
+            make, model,
+            imageUrls: req.files.map(f => `/uploads/${f.filename}`)
+        });
+        await newCar.save();
+        res.redirect('/?success=1');
+    } catch (err) {
+        res.render('add-car', { error: 'Eroare la salvare!' });
+    }
+});
+
+app.get('/api/search', async (req, res) => {
+    const q = (req.query.plate || '').toUpperCase().replace(/\s/g, '');
+    const cars = await Car.find({ plateNumber: { $regex: q, $options: 'i' } }).limit(5);
+    res.json(cars);
+});
+
+app.listen(3000, () => console.log('Server: http://localhost:3000'));

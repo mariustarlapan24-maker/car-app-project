@@ -1,89 +1,49 @@
 <%- include('partials/header', { title: 'Adaugă Mașină' }) %>
-
-<div class="row justify-content-center mt-5">
-    <div class="col-12 col-md-8 col-lg-6">
-        <div class="card shadow-lg p-4 border-0">
-            <h2 class="card-title text-center mb-4 fw-bold">Adaugă o Mașină</h2>
-            
-            <% if(error) { %>
-                <div class="alert alert-danger" role="alert"><%= error %></div>
-            <% } %>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 card shadow p-4 border-0">
+            <h2 class="text-center mb-4">Adaugă Mașină</h2>
+            <% if(typeof error !== 'undefined' && error) { %><div class="alert alert-danger"><%= error %></div><% } %>
             
             <form action="/add-car" method="POST" enctype="multipart/form-data">
-                
                 <div class="mb-3">
-                    <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare</label>
+                    <label class="fw-bold">Număr Înmatriculare</label>
                     <div class="input-group">
-                        <span class="input-group-text bg-light">
-                            <img src="/img/drapel-md.png" class="flag-icon me-1">
-                            <span class="fw-bold">MD</span>
-                        </span>
-                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" 
-                               placeholder="Număr de Înmatriculare (Ex: ABC 123)" maxlength="7" required>
+                        <span class="input-group-text fw-bold">MD</span>
+                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" placeholder="ABC123" maxlength="6" required>
                     </div>
                 </div>
-                
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Tip Vehicul</label>
-                    <input type="text" class="form-control" value="Mașină" disabled>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="make" class="form-label fw-bold">Marca</label>
+                    <label class="fw-bold">Marca</label>
                     <select name="make" id="make" class="form-select" required>
-                        <option value="" disabled selected>Selectează marca…</option>
-                        <option value="Audi">Audi</option>
-                        <option value="BMW">BMW</option>
-                        <option value="Mercedes">Mercedes</option>
-                        <option value="Volkswagen">Volkswagen</option>
-                        <option value="Toyota">Toyota</option>
-                        <option value="Honda">Honda</option>
+                        <option value="" disabled selected>Selectează...</option>
+                        <option value="Audi">Audi</option><option value="BMW">BMW</option><option value="Mercedes">Mercedes</option><option value="Toyota">Toyota</option>
                     </select>
                 </div>
-                
-                <div class="mb-4">
-                    <label for="model" class="form-label fw-bold">Modelul</label>
-                    <select name="model" id="model" class="form-select" required>
-                        <option value="" disabled selected>Selectează modelul…</option>
-                    </select>
+                <div class="mb-3">
+                    <label class="fw-bold">Model</label>
+                    <select name="model" id="model" class="form-select" required></select>
                 </div>
-
                 <div class="mb-4">
-                    <label for="carImage" class="form-label fw-bold">Imagini Mașină (Minim 1, Maxim 3)</label>
-                    <input type="file" name="carImage" id="carImage" class="form-control" accept="image/*" multiple required>
-                    <div class="form-text">Selectează minim 1 și maxim 3 imagini.</div>
+                    <label class="fw-bold">Imagini (Max 3)</label>
+                    <input type="file" name="carImage" class="form-control" accept="image/*" multiple required>
                 </div>
-                
-                <button type="submit" class="btn btn-primary w-100 btn-lg">Salvează Mașina</button>
+                <button type="submit" class="btn btn-primary w-100 py-2">SALVEAZĂ</button>
             </form>
         </div>
     </div>
 </div>
 
 <script>
-const makeSelect = document.getElementById('make');
-const modelSelect = document.getElementById('model');
+    const p = document.getElementById('plateNumber');
+    p.addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
 
-const modelsData = {
-    "Audi": ["A3","A4","A6","Q5"],
-    "BMW": ["X1","X3","X5","M3"],
-    "Mercedes": ["C200","E300","S500"],
-    "Volkswagen": ["Golf","Passat","Tiguan"],
-    "Toyota": ["Corolla", "Camry", "RAV4"],
-    "Honda": ["Civic", "Accord", "CR-V"]
-};
+    const mSelect = document.getElementById('make');
+    const modSelect = document.getElementById('model');
+    const data = { "Audi": ["A4", "A6"], "BMW": ["X5", "M3"], "Mercedes": ["E-Class", "S-Class"], "Toyota": ["Corolla", "RAV4"] };
 
-if(makeSelect){
-    makeSelect.addEventListener('change', () => {
-        modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-        const models = modelsData[makeSelect.value] || [];
-        models.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m; option.text = m;
-            modelSelect.add(option);
-        });
+    mSelect.addEventListener('change', () => {
+        modSelect.innerHTML = (data[mSelect.value] || []).map(m => `<option value="${m}">${m}</option>`).join('');
     });
-}
 </script>
-
 <%- include('partials/footer') %>
