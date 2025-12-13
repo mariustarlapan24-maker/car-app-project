@@ -1,19 +1,22 @@
 <%- include('partials/header', { title: 'Adaugă Mașină' }) %>
+
 <div class="row justify-content-center mt-5">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card shadow-lg p-4 border-0">
             <h2 class="card-title text-center mb-4 fw-bold">Adaugă o Mașină</h2>
+            
             <form action="/add-car" method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light">
                             <img src="/img/drapel-md.png" style="width: 20px;">
-                            <span class="fw-bold">MD</span>
+                            <span class="fw-bold ms-1">MD</span>
                         </span>
-                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" placeholder="Ex: ABC 123" required maxlength="7">
+                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" placeholder="ABC 123" required autocomplete="off">
                     </div>
                 </div>
+
                 <div class="mb-3">
                     <label for="make" class="form-label fw-bold">Marca</label>
                     <select name="make" id="make" class="form-select" required>
@@ -24,16 +27,19 @@
                         <option value="Volkswagen">Volkswagen</option>
                     </select>
                 </div>
+
                 <div class="mb-4">
                     <label for="model" class="form-label fw-bold">Modelul</label>
                     <select name="model" id="model" class="form-select" required>
                         <option value="" disabled selected>Selectează modelul…</option>
                     </select>
                 </div>
+
                 <div class="mb-4">
                     <label for="carImage" class="form-label fw-bold">Imagini (Max 3)</label>
                     <input type="file" name="carImage" id="carImage" class="form-control" accept="image/*" multiple required>
                 </div>
+
                 <button type="submit" class="btn btn-primary w-100 btn-lg">Salvează Mașina</button>
             </form>
         </div>
@@ -42,26 +48,44 @@
 
 <script>
     const plateInput = document.getElementById('plateNumber');
-    const makeSelect = document.getElementById('make');
-    const modelSelect = document.getElementById('model');
 
-    // Formatare număr în timp real fără blocaj
-    plateInput.addEventListener('input', function (e) {
-        let cursorPos = this.selectionStart;
-        let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    // SOLUȚIA ANTI-BLOCAJ: Folosim un flag pentru a preveni auto-declanșarea
+    let isFormatting = false;
 
-        if (val.length > 3) {
-            val = val.substring(0, 3) + " " + val.substring(3, 6);
-        }
+    if (plateInput) {
+        plateInput.addEventListener('input', function(e) {
+            if (isFormatting) return; // Dacă scriptul deja lucrează, ieșim
+            
+            isFormatting = true; // Blocăm alte execuții paralele
 
-        this.value = val.substring(0, 7); // limita la 7 caractere
+            let input = e.target;
+            let start = input.selectionStart;
+            let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // Limităm la 6 caractere brute
+            val = val.substring(0, 6);
 
-        // Ajustăm cursorul după spațiu
-        if (cursorPos === 4 && !val.includes(' ')) cursorPos++;
-        this.setSelectionRange(cursorPos, cursorPos);
-    });
+            // Separăm literele de cifre
+            let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
+            let numbers = val.substring(letters.length).replace(/[^0-9]/g, '');
+            
+            let formatted = letters;
+            if (numbers.length > 0) {
+                formatted += " " + numbers;
+            }
 
-    // Datele pentru modele auto
+            // Aplicăm valoarea
+            input.value = formatted;
+
+            // Repoziționăm cursorul corect
+            if (val.length > 3 && start === 4) start++;
+            input.setSelectionRange(start, start);
+
+            isFormatting = false; // Deblocăm scriptul pentru următoarea tastă
+        });
+    }
+
+    // Logica pentru modele (simplificată pentru test)
     const modelsData = {
         "Audi": ["A3","A4","A6","Q5"],
         "BMW": ["X1","X3","X5","M3"],
@@ -69,15 +93,20 @@
         "Volkswagen": ["Golf","Passat","Tiguan"]
     };
 
-    makeSelect.addEventListener('change', () => {
-        modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-        const models = modelsData[makeSelect.value] || [];
-        models.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m;
-            option.text = m;
-            modelSelect.add(option);
+    const makeSelect = document.getElementById('make');
+    const modelSelect = document.getElementById('model');
+
+    if (makeSelect) {
+        makeSelect.addEventListener('change', () => {
+            modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
+            const models = modelsData[makeSelect.value] || [];
+            models.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m; option.text = m;
+                modelSelect.add(option);
+            });
         });
-    });
+    }
 </script>
+
 <%- include('partials/footer') %>
