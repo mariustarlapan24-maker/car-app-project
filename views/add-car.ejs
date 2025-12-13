@@ -5,28 +5,29 @@
         <div class="card shadow-lg p-4 border-0">
             <h2 class="card-title text-center mb-4 fw-bold">Adaugă o Mașină</h2>
             
-            <% if(typeof error !== 'undefined' && error) { %>
+            <% if(error) { %>
                 <div class="alert alert-danger" role="alert"><%= error %></div>
             <% } %>
             
             <form action="/add-car" method="POST" enctype="multipart/form-data">
+                
                 <div class="mb-3">
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light">
-                            <img src="/img/drapel-md.png" style="width: 20px;">
-                            <span class="fw-bold ms-1">MD</span>
+                            <img src="/img/drapel-md.png" class="flag-icon me-1">
+                            <span class="fw-bold">MD</span>
                         </span>
-                        <input type="text" 
-                               name="plateNumber" 
-                               id="plateNumber" 
-                               class="form-control form-control-lg" 
-                               placeholder="Ex: ABC 123" 
-                               required 
-                               autocomplete="off">
+                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" 
+                               placeholder="Număr de Înmatriculare (Ex: ABC 123)" maxlength="7" required>
                     </div>
                 </div>
-
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tip Vehicul</label>
+                    <input type="text" class="form-control" value="Mașină" disabled>
+                </div>
+                
                 <div class="mb-3">
                     <label for="make" class="form-label fw-bold">Marca</label>
                     <select name="make" id="make" class="form-select" required>
@@ -35,9 +36,11 @@
                         <option value="BMW">BMW</option>
                         <option value="Mercedes">Mercedes</option>
                         <option value="Volkswagen">Volkswagen</option>
+                        <option value="Toyota">Toyota</option>
+                        <option value="Honda">Honda</option>
                     </select>
                 </div>
-
+                
                 <div class="mb-4">
                     <label for="model" class="form-label fw-bold">Modelul</label>
                     <select name="model" id="model" class="form-select" required>
@@ -46,10 +49,11 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="carImage" class="form-label fw-bold">Imagini (Max 3)</label>
+                    <label for="carImage" class="form-label fw-bold">Imagini Mașină (Minim 1, Maxim 3)</label>
                     <input type="file" name="carImage" id="carImage" class="form-control" accept="image/*" multiple required>
+                    <div class="form-text">Selectează minim 1 și maxim 3 imagini.</div>
                 </div>
-
+                
                 <button type="submit" class="btn btn-primary w-100 btn-lg">Salvează Mașina</button>
             </form>
         </div>
@@ -57,67 +61,29 @@
 </div>
 
 <script>
-    const plateInput = document.getElementById('plateNumber');
+const makeSelect = document.getElementById('make');
+const modelSelect = document.getElementById('model');
 
-    if (plateInput) {
-        // Folosim onkeyup pentru a procesa textul după ce tasta a fost eliberată
-        plateInput.addEventListener('keyup', function(e) {
-            // Ignorăm tastele de control (Săgeți, Backspace, etc.)
-            if (["ArrowLeft", "ArrowRight", "Backspace", "Tab"].includes(e.key)) return;
+const modelsData = {
+    "Audi": ["A3","A4","A6","Q5"],
+    "BMW": ["X1","X3","X5","M3"],
+    "Mercedes": ["C200","E300","S500"],
+    "Volkswagen": ["Golf","Passat","Tiguan"],
+    "Toyota": ["Corolla", "Camry", "RAV4"],
+    "Honda": ["Civic", "Accord", "CR-V"]
+};
 
-            let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            
-            // Limităm la 6 caractere brute
-            if (val.length > 6) val = val.substring(0, 6);
-
-            let formatted = "";
-            if (val.length > 3) {
-                // Dacă avem mai mult de 3 caractere, forțăm formatul "AAA 111"
-                let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
-                let numbers = val.substring(3).replace(/[^0-9]/g, '');
-                formatted = letters + (numbers.length > 0 ? " " + numbers : "");
-            } else {
-                // Altfel, doar litere mari
-                formatted = val.replace(/[^A-Z]/g, '');
-            }
-
-            // Actualizăm doar dacă este necesar
-            if (this.value !== formatted) {
-                this.value = formatted;
-            }
+if(makeSelect){
+    makeSelect.addEventListener('change', () => {
+        modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
+        const models = modelsData[makeSelect.value] || [];
+        models.forEach(m => {
+            const option = document.createElement('option');
+            option.value = m; option.text = m;
+            modelSelect.add(option);
         });
-
-        // Prevenim introducerea de caractere invalide direct (opțional)
-        plateInput.addEventListener('keypress', function(e) {
-            const char = String.fromCharCode(e.which);
-            if (!/[A-Za-z0-9]/.test(char)) {
-                e.preventDefault();
-            }
-        });
-    }
-
-    // Logica pentru modele (nemanipulată)
-    const modelsData = {
-        "Audi": ["A3","A4","A6","Q5"],
-        "BMW": ["X1","X3","X5","M3"],
-        "Mercedes": ["C200","E300","S500"],
-        "Volkswagen": ["Golf","Passat","Tiguan"]
-    };
-
-    const makeSelect = document.getElementById('make');
-    const modelSelect = document.getElementById('model');
-
-    if (makeSelect) {
-        makeSelect.addEventListener('change', () => {
-            modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-            const models = modelsData[makeSelect.value] || [];
-            models.forEach(m => {
-                const option = document.createElement('option');
-                option.value = m; option.text = m;
-                modelSelect.add(option);
-            });
-        });
-    }
+    });
+}
 </script>
 
 <%- include('partials/footer') %>
