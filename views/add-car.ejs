@@ -5,13 +5,7 @@
         <div class="card shadow-lg p-4 border-0 rounded-4">
             <h2 class="card-title text-center mb-4 fw-bold text-primary">Adaugă o Mașină</h2>
 
-            <% if(typeof error !== 'undefined' && error) { %>
-                <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
-                </div>
-            <% } %>
-
-            <form action="/add-car" method="POST" enctype="multipart/form-data" id="addCarForm">
+            <form action="/add-car" method="POST" id="addCarForm">
                 <div class="mb-3">
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare (Format MD)</label>
                     <div class="input-group input-group-lg">
@@ -24,18 +18,7 @@
                         <input type="text" name="plateNumber" id="plateNumber" 
                                class="form-control fw-bold text-primary" 
                                placeholder="Ex: ABC 123" 
-                               maxlength="8" 
-                               style="letter-spacing: 1px;"
-                               required autocomplete="off">
-                    </div>
-                    <div class="form-text">Format obligatoriu: 3 litere + spațiu + 1-3 cifre.</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Tip Vehicul</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-truck-flatbed"></i></span>
-                        <input type="text" class="form-control bg-white" value="Autoturism" disabled>
+                               maxlength="8" required autocomplete="off">
                     </div>
                 </div>
 
@@ -60,9 +43,10 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="carImage" class="form-label fw-bold">Imagini Mașină (Max 3)</label>
-                    <input type="file" name="carImage" id="carImage" class="form-control" accept="image/*" multiple required>
-                    <div id="fileLimitMessage" class="form-text text-muted">Puteți selecta între 1 și 3 imagini.</div>
+                    <label for="imageUrls" class="form-label fw-bold">URL Imagine Mașină</label>
+                    <input type="url" name="imageUrls" id="imageUrls" class="form-control" 
+                           placeholder="https://exemplu.com/poza.jpg" required>
+                    <div class="form-text">Introduceți un link valid către o imagine de pe internet.</div>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm">
@@ -74,10 +58,9 @@
 </div>
 
 <script>
-    // 1. Logica pentru Select Dinamic (Marci și Modele)
+    // 1. Logica pentru Select Dinamic
     const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
-
     const modelsData = {
         "Audi": ["A3", "A4", "A6", "Q5", "Q7"],
         "BMW": ["X1", "X3", "X5", "M3", "M5"],
@@ -87,63 +70,26 @@
         "Honda": ["Civic", "Accord", "CR-V", "HR-V"]
     };
 
-    if (makeSelect) {
-        makeSelect.addEventListener('change', () => {
-            modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-            const models = modelsData[makeSelect.value] || [];
-            models.forEach(m => {
-                const option = document.createElement('option');
-                option.value = m;
-                option.text = m;
-                modelSelect.add(option);
-            });
+    makeSelect.addEventListener('change', () => {
+        modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
+        const models = modelsData[makeSelect.value] || [];
+        models.forEach(m => {
+            const option = document.createElement('option');
+            option.value = m;
+            option.text = m;
+            modelSelect.add(option);
         });
-    }
+    });
 
-    // 2. Limitare fișiere (Maxim 3 imagini)
-    const carImageInput = document.getElementById('carImage');
-    if (carImageInput) {
-        carImageInput.addEventListener('change', function() {
-            if (this.files.length > 3) {
-                alert("Puteți selecta maximum 3 imagini!");
-                this.value = "";
-            }
-        });
-    }
-
-    // 3. Logica de formatare "ABC 123" - REPARATĂ PENTRU A EVITA HAOSUL
+    // 2. Formatare Plăcuță (Simplificată)
     const plateInput = document.getElementById('plateNumber');
-    if (plateInput) {
-        plateInput.addEventListener('input', (e) => {
-            let el = e.target;
-            let cursor = el.selectionStart;
-            
-            // Pasul 1: Curățăm tot ce nu e literă sau cifră și facem litere MARI
-            let raw = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            
-            // Pasul 2: Extragem separat literele (primele 3) și cifrele (următoarele 3)
-            let letters = raw.replace(/[0-9]/g, '').substring(0, 3);
-            let numbers = raw.replace(/[A-Z]/g, '').substring(0, 3);
-
-            let finalValue = letters;
-            // Pasul 3: Adăugăm spațiul doar dacă avem exact 3 litere și urmează cifre
-            if (letters.length === 3 && numbers.length > 0) {
-                finalValue += ' ' + numbers;
-            } else {
-                finalValue += numbers;
-            }
-
-            // Aplicăm valoarea formatată
-            let oldLength = el.value.length;
-            el.value = finalValue;
-
-            // Pasul 4: Corecție poziție cursor pentru experiență fluidă
-            if (finalValue.length > oldLength && finalValue.charAt(cursor - 1) === ' ') {
-                cursor++;
-            }
-            el.setSelectionRange(cursor, cursor);
-        });
-    }
+    plateInput.addEventListener('input', (e) => {
+        let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (val.length > 3) {
+            val = val.substring(0, 3) + ' ' + val.substring(3, 6);
+        }
+        e.target.value = val;
+    });
 </script>
 
 <%- include('partials/footer') %>
