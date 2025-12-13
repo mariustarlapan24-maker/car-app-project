@@ -35,8 +35,14 @@ body {
     font-weight: normal;
 }
 
+/* --- TAB BAR ACTIV (Corectat) --- */
+.footer .tab.active, 
+.footer .tab.active i, 
+.footer .tab.active span {
+    color: #0d6efd !important; /* Forțăm albastrul Bootstrap */
+}
+
 .footer .tab.active {
-    color: #0d6efd; 
     font-weight: bold;
 }
 

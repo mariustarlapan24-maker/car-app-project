@@ -2,43 +2,39 @@
     <div class="container d-flex justify-content-around">
         
         <% 
-            const currentTitle = title.split(' ')[0];
+            // Verificăm dacă variabila title există, altfel folosim un text gol ca să nu dea eroare
+            const activeTitle = (typeof title !== 'undefined') ? title : ''; 
         %>
         
-        <a href="/" class="tab <%= currentTitle.includes('Acasă') ? 'active' : '' %> text-decoration-none">
+        <a href="/" class="tab <%= activeTitle.indexOf('Acasă') !== -1 ? 'active' : '' %> text-decoration-none">
             <i class="bi bi-house-door-fill"></i>
             <span class="d-block">Acasă</span>
         </a>
         
         <% if (isLoggedIn) { %>
-            <a href="/add-car" class="tab <%= currentTitle.includes('Adaugă') ? 'active' : '' %> text-decoration-none">
+            <a href="/add-car" class="tab <%= activeTitle.indexOf('Adaugă') !== -1 ? 'active' : '' %> text-decoration-none">
                 <i class="bi bi-plus-circle-fill"></i>
                 <span class="d-block">Adaugă</span>
             </a>
             
-            <a href="/chat" class="tab <%= currentTitle.includes('Mesaje') || currentTitle.includes('Chat') ? 'active' : '' %> text-decoration-none">
+            <a href="/chat" class="tab <%= (activeTitle.indexOf('Mesaje') !== -1 || activeTitle.indexOf('Chat') !== -1) ? 'active' : '' %> text-decoration-none">
                 <i class="bi bi-chat-dots-fill"></i>
                 <span class="d-block">Chat</span>
             </a>
             
-            <a href="/profile" class="tab <%= currentTitle.includes('Garajul') || currentTitle.includes('Profil') ? 'active' : '' %> text-decoration-none">
+            <a href="/profile" class="tab <%= (activeTitle.indexOf('Garajul') !== -1 || activeTitle.indexOf('Profil') !== -1) ? 'active' : '' %> text-decoration-none">
                 <i class="bi bi-person-circle"></i>
                 <span class="d-block">Profil</span>
             </a>
         <% } else { %>
-            <a href="/login" class="tab <%= currentTitle.includes('Login') ? 'active' : '' %> text-decoration-none">
+            <a href="/login" class="tab <%= activeTitle.indexOf('Login') !== -1 ? 'active' : '' %> text-decoration-none">
                 <i class="bi bi-box-arrow-in-right"></i>
                 <span class="d-block">Login</span>
             </a>
             
-            <a href="/register" class="tab <%= currentTitle.includes('Creează') ? 'active' : '' %> text-decoration-none">
+            <a href="/register" class="tab <%= activeTitle.indexOf('Creează') !== -1 ? 'active' : '' %> text-decoration-none">
                 <i class="bi bi-person-plus-fill"></i>
                 <span class="d-block">Înregistrare</span>
-            </a>
-            
-            <a href="/login" class="tab <%= currentTitle.includes('Profil') ? 'active' : '' %> text-decoration-none">
-                <i class="bi bi-person-circle"></i>
-                <span class="d-block">Login</span>
             </a>
         <% } %>
     </div>
