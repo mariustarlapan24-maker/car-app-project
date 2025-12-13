@@ -1,27 +1,19 @@
 <%- include('partials/header', { title: 'Adaugă Mașină' }) %>
-
 <div class="row justify-content-center mt-5">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card shadow-lg p-4 border-0">
             <h2 class="card-title text-center mb-4 fw-bold">Adaugă o Mașină</h2>
-            
-            <% if(typeof error !== 'undefined' && error) { %>
-                <div class="alert alert-danger" role="alert"><%= error %></div>
-            <% } %>
-            
             <form action="/add-car" method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light">
                             <img src="/img/drapel-md.png" style="width: 20px;">
-                            <span class="fw-bold ms-1">MD</span>
+                            <span class="fw-bold">MD</span>
                         </span>
-                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" placeholder="ABC 123" required autocomplete="off">
+                        <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" placeholder="Ex: ABC 123" required maxlength="7">
                     </div>
-                    <div class="form-text">Format: 3 litere și 3 cifre (ex. ABC 123)</div>
                 </div>
-
                 <div class="mb-3">
                     <label for="make" class="form-label fw-bold">Marca</label>
                     <select name="make" id="make" class="form-select" required>
@@ -30,22 +22,18 @@
                         <option value="BMW">BMW</option>
                         <option value="Mercedes">Mercedes</option>
                         <option value="Volkswagen">Volkswagen</option>
-                        <option value="Toyota">Toyota</option>
                     </select>
                 </div>
-
                 <div class="mb-4">
                     <label for="model" class="form-label fw-bold">Modelul</label>
                     <select name="model" id="model" class="form-select" required>
                         <option value="" disabled selected>Selectează modelul…</option>
                     </select>
                 </div>
-
                 <div class="mb-4">
                     <label for="carImage" class="form-label fw-bold">Imagini (Max 3)</label>
                     <input type="file" name="carImage" id="carImage" class="form-control" accept="image/*" multiple required>
                 </div>
-
                 <button type="submit" class="btn btn-primary w-100 btn-lg">Salvează Mașina</button>
             </form>
         </div>
@@ -57,48 +45,28 @@
     const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
 
-    // --- REPARARE FORMATARII NUMĂRULUI ---
+    // Formatare număr în timp real fără blocaj
     plateInput.addEventListener('input', function (e) {
-        // 1. Salvăm poziția cursorului înainte de modificare
-        let start = this.selectionStart;
-        
-        // 2. Curățăm textul: doar litere și cifre, maxim 6 caractere brute
-        let raw = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (raw.length > 6) raw = raw.substring(0, 6);
+        let cursorPos = this.selectionStart;
+        let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        // 3. Aplicăm formatul: primele 3 caractere să fie LITERE, restul CIFRE
-        let letters = raw.substring(0, 3).replace(/[^A-Z]/g, '');
-        let numbers = raw.substring(letters.length).replace(/[^0-9]/g, '');
-        
-        // Combinăm literele curățate cu cifrele curățate
-        let cleanRaw = letters + numbers;
-        let formatted = cleanRaw;
-
-        // Adăugăm spațiul dacă avem cifre
-        if (cleanRaw.length > 3) {
-            formatted = cleanRaw.substring(0, 3) + " " + cleanRaw.substring(3);
+        if (val.length > 3) {
+            val = val.substring(0, 3) + " " + val.substring(3, 6);
         }
 
-        // 4. Actualizăm valoarea DOAR dacă este diferită (previne blocajul)
-        if (this.value !== formatted) {
-            this.value = formatted;
-            
-            // 5. Ajustăm poziția cursorului
-            // Dacă am adăugat un spațiu chiar acum, mutăm cursorul cu o poziție
-            if (formatted.length > raw.length && start === 4) {
-                start++;
-            }
-            this.setSelectionRange(start, start);
-        }
+        this.value = val.substring(0, 7); // limita la 7 caractere
+
+        // Ajustăm cursorul după spațiu
+        if (cursorPos === 4 && !val.includes(' ')) cursorPos++;
+        this.setSelectionRange(cursorPos, cursorPos);
     });
 
-    // --- LOGICA MODELE AUTO ---
+    // Datele pentru modele auto
     const modelsData = {
         "Audi": ["A3","A4","A6","Q5"],
         "BMW": ["X1","X3","X5","M3"],
         "Mercedes": ["C200","E300","S500"],
-        "Volkswagen": ["Golf","Passat","Tiguan"],
-        "Toyota": ["Corolla", "Camry", "RAV4"]
+        "Volkswagen": ["Golf","Passat","Tiguan"]
     };
 
     makeSelect.addEventListener('change', () => {
@@ -111,14 +79,5 @@
             modelSelect.add(option);
         });
     });
-
-    // Validare număr imagini
-    document.getElementById('carImage').addEventListener('change', function() {
-        if (this.files.length > 3) {
-            alert("Poți selecta maxim 3 imagini!");
-            this.value = '';
-        }
-    });
 </script>
-
 <%- include('partials/footer') %>
