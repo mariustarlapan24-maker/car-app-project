@@ -1,8 +1,8 @@
 <%- include('partials/header', { title: 'Acasă' }) %>
 
-<% if (typeof success !== 'undefined' && success) { %>
+<% if (locals.success) { %>
     <div class="alert alert-success alert-dismissible fade show text-center border-0 shadow-sm" role="alert">
-        Mașina a fost înregistrată cu succes!
+        <strong>Succes!</strong> Mașina a fost înregistrată în baza de date Atlas.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <% } %>
@@ -75,7 +75,7 @@
     <% } else { %>
         <div class="alert alert-light text-center py-5 shadow-sm rounded-4">
             <i class="bi bi-car-front fs-1 text-muted d-block mb-3"></i>
-            Nu există mașini înregistrate încă.
+            Nu există mașini înregistrate încă pe această bază de date.
         </div>
     <% } %>
 </div>
@@ -87,43 +87,32 @@
     const resultsList = document.getElementById('search-results');
     const clearBtn = document.getElementById('clear-search');
 
-    // 1. Curățare URL după succes
+    // Resetare URL după afișarea succesului
     if (window.location.search.includes('success')) {
         setTimeout(() => {
             window.history.replaceState({}, document.title, "/");
-        }, 2000);
+        }, 3000);
     }
 
-    // 2. Formatare Automată (ABC 123) și Căutare
+    // Funcția de Căutare (AJAX)
     if (searchInput) {
         searchInput.addEventListener('input', async (e) => {
-            let cursor = e.target.selectionStart;
-            let rawValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            let val = e.target.value.toUpperCase().replace(/\s/g, '');
             
-            let letters = rawValue.replace(/[0-9]/g, '').substring(0, 3);
-            let numbers = rawValue.replace(/[A-Z]/g, '').substring(0, 3);
-            
-            let formatted = letters;
-            if (letters.length === 3 && numbers.length > 0) {
-                formatted += ' ' + numbers;
+            // Formatare vizuală în input (ABC 123)
+            if (val.length > 3) {
+                e.target.value = val.substring(0, 3) + ' ' + val.substring(3, 6);
             } else {
-                formatted += numbers;
+                e.target.value = val;
             }
 
-            let oldLen = e.target.value.length;
-            e.target.value = formatted;
-            
-            if (formatted.length > oldLen && formatted.charAt(cursor - 1) === ' ') cursor++;
-            e.target.setSelectionRange(cursor, cursor);
-
-            const query = formatted.replace(/\s/g, ''); 
-            if (query.length < 2) {
+            if (val.length < 2) {
                 resultsList.style.display = 'none';
                 return;
             }
 
             try {
-                const res = await fetch(`/api/search?plate=${query}`);
+                const res = await fetch(`/api/search?plate=${val}`);
                 const cars = await res.json();
 
                 if (cars.length > 0) {
@@ -146,23 +135,14 @@
                     resultsList.style.display = 'block';
                 }
             } catch (err) {
-                console.error("Eroare search:", err);
+                console.error("Eroare la căutare:", err);
             }
         });
     }
 
-    // 3. Buton Clear
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            resultsList.style.display = 'none';
-            searchInput.focus();
-        });
-    }
-
-    // 4. Închidere listă la click în exterior
+    // Închidere listă la click în afară
     document.addEventListener('click', (e) => {
-        if (searchInput && resultsList && !searchInput.contains(e.target) && !resultsList.contains(e.target)) {
+        if (!searchInput.contains(e.target) && !resultsList.contains(e.target)) {
             resultsList.style.display = 'none';
         }
     });
