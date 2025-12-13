@@ -5,12 +5,12 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const multer = require('multer');
 const ImageKit = require('imagekit');
-const session = require('express-session'); // Adăugat pentru SESSION_SECRET
+const session = require('express-session');
 
 const app = express();
 
 // ==========================================
-// 1. CONFIGURARE IMAGEKIT.IO (Folosind ID-ul tău)
+// 1. CONFIGURARE IMAGEKIT.IO
 // ==========================================
 const imagekit = new ImageKit({
     publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
@@ -28,11 +28,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'secret-cheie-temporara',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Pune true dacă folosești HTTPS/SSL
+    cookie: { secure: false } 
 }));
 
 // ==========================================
-// 3. CONECTARE BAZĂ DE DATE
+// 3. CONECTARE BAZĂ DE DATE (Cloud/Local)
 // ==========================================
 const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/car_db';
 mongoose.connect(mongoURI)
@@ -69,9 +69,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Middleware pentru a trimite variabilele globale către EJS
+// Middleware pentru variabile globale în EJS
 app.use((req, res, next) => {
-    res.locals.isGuest = !req.session.user; // Exemplu de logică pentru isGuest
+    res.locals.isGuest = !req.session.user;
     res.locals.title = "Car-App";
     next();
 });
@@ -80,6 +80,7 @@ app.use((req, res, next) => {
 // 6. RUTE SITE
 // ==========================================
 
+// HOME - Lista mașinilor
 app.get('/', async (req, res) => {
     try {
         const cars = await Car.find().sort({ createdAt: -1 });
@@ -89,20 +90,24 @@ app.get('/', async (req, res) => {
     }
 });
 
+// PAGINA ADAUGARE
 app.get('/add-car', (req, res) => {
     res.render('add-car', { title: 'Adaugă Mașină' });
 });
 
+// SALVARE MAȘINĂ + UPLOAD IMAGEKIT
 app.post('/add-car', upload.array('carImage', 3), async (req, res) => {
     try {
         const uploadedImages = [];
-        for (const file of req.files) {
-            const response = await imagekit.upload({
-                file: file.buffer,
-                fileName: `car-${Date.now()}.jpg`,
-                folder: "/masini"
-            });
-            uploadedImages.push(response.url);
+        if (req.files) {
+            for (const file of req.files) {
+                const response = await imagekit.upload({
+                    file: file.buffer,
+                    fileName: `car-${Date.now()}.jpg`,
+                    folder: "/masini"
+                });
+                uploadedImages.push(response.url);
+            }
         }
 
         const newCar = new Car({
@@ -116,24 +121,40 @@ app.post('/add-car', upload.array('carImage', 3), async (req, res) => {
         await newCar.save();
         res.redirect('/?success=true');
     } catch (err) {
+        console.error("Eroare la adăugare:", err);
         res.render('add-car', { error: "Eroare la upload.", title: 'Adaugă Mașină' });
     }
 });
 
+// DETALII MAȘINĂ (Ruta cu Debug)
 app.get('/car/:id', async (req, res) => {
     try {
-        const car = await Car.findById(req.params.id);
-        if (!car) return res.status(404).send("Mașina nu există.");
+        const carId = req.params.id;
+        console.log("LOG: Se accesează mașina cu ID:", carId);
+
+        if (!mongoose.Types.ObjectId.isValid(carId)) {
+            console.log("LOG: ID formatat incorect.");
+            return res.status(400).send("ID invalid.");
+        }
+
+        const car = await Car.findById(carId);
+        if (!car) {
+            console.log("LOG: Mașina nu a fost găsită în baza de date Atlas.");
+            return res.status(404).send("Mașina nu există.");
+        }
+
         res.render('car-details', { 
             car, 
             isOwner: false, 
             title: 'Detalii Mașină' 
         });
     } catch (err) {
+        console.error("LOG Eroare server:", err);
         res.status(500).send("Eroare server.");
     }
 });
 
+// CHAT PRIVAT
 app.get('/chat/private/:receiverEmail', async (req, res) => {
     try {
         const receiverEmail = req.params.receiverEmail;
@@ -150,6 +171,7 @@ app.get('/chat/private/:receiverEmail', async (req, res) => {
     }
 });
 
+// API CĂUTARE
 app.get('/api/search', async (req, res) => {
     let q = (req.query.plate || '').toUpperCase().replace(/\s/g, '');
     if (q.length < 2) return res.json([]);
@@ -162,4 +184,6 @@ app.get('/api/search', async (req, res) => {
 // 7. PORNIRE SERVER
 // ==========================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server activ pe portul ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`🚀 Server activ pe portul ${PORT}`);
+});
