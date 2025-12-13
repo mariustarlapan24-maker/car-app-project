@@ -19,7 +19,7 @@
                             <span class="fw-bold">MD</span>
                         </span>
                         <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" 
-                               placeholder="Ex: ABC 123" required>
+                               placeholder="Ex: ABC 123" required autocomplete="off">
                     </div>
                 </div>
                 
@@ -60,36 +60,43 @@
     </div>
 </div>
 
-
-
 <script>
+    const plateInput = document.getElementById('plateNumber');
     const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
-    const plateInput = document.getElementById('plateNumber');
 
-    // --- 1. LOGICA PENTRU FORMATARE NUMĂR (Litere + Spațiu + Cifre) ---
+    // --- LOGICA ANTI-BLOCAJ PENTRU NUMĂR ---
     if (plateInput) {
-        plateInput.addEventListener('input', function (e) {
-            // Curățăm tot ce nu e literă sau cifră și limităm la 6 caractere brute (fără spațiu)
-            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+        plateInput.addEventListener('input', function(e) {
+            // 1. Salvăm poziția cursorului
+            let cursor = e.target.selectionStart;
             
-            // Extragem primele 3 caractere (trebuie să fie litere)
-            let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
+            // 2. Curățăm valoarea brută (doar litere și cifre, max 6)
+            let rawValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
             
-            // Extragem restul de caractere (trebuie să fie cifre)
-            let numbers = val.substring(letters.length).replace(/[^0-9]/g, '');
+            // 3. Construim formatul ABC 123
+            let letters = rawValue.substring(0, 3).replace(/[^A-Z]/g, '');
+            let numbers = rawValue.substring(letters.length).replace(/[^0-9]/g, '');
             
-            // Reconstruim valoarea finală cu spațiu
-            let formatted = letters;
+            let formattedValue = letters;
             if (numbers.length > 0) {
-                formatted += " " + numbers;
+                formattedValue += " " + numbers;
             }
-            
-            e.target.value = formatted;
+
+            // 4. IMPORTANT: Modificăm valoarea DOAR dacă este diferită de ce e deja în input
+            // Asta previne blocajul (bucla infinită)
+            if (e.target.value !== formattedValue) {
+                e.target.value = formattedValue;
+                
+                // Ajustăm cursorul dacă am adăugat un spațiu
+                if (formattedValue.length === 5 && cursor === 4) {
+                    e.target.setSelectionRange(cursor + 1, cursor + 1);
+                }
+            }
         });
     }
 
-    // --- 2. LOGICA PENTRU MODELE DINAMICE ---
+    // --- LOGICA MODELE DINAMICE ---
     const modelsData = {
         "Audi": ["A3","A4","A6","Q5"],
         "BMW": ["X1","X3","X5","M3"],
@@ -99,25 +106,26 @@
         "Honda": ["Civic", "Accord", "CR-V"]
     };
 
-    if(makeSelect){
+    if (makeSelect) {
         makeSelect.addEventListener('change', () => {
             modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
             const models = modelsData[makeSelect.value] || [];
             models.forEach(m => {
                 const option = document.createElement('option');
-                option.value = m; option.text = m;
+                option.value = m;
+                option.text = m;
                 modelSelect.add(option);
             });
         });
     }
 
-    // --- 3. VALIDARE NUMĂR IMAGINI ---
-    const carImageInput = document.getElementById('carImage');
-    if (carImageInput) {
-        carImageInput.addEventListener('change', function() {
+    // --- VALIDARE IMAGINI ---
+    const imgInput = document.getElementById('carImage');
+    if (imgInput) {
+        imgInput.addEventListener('change', function() {
             if (this.files.length > 3) {
                 alert("Poți selecta maxim 3 imagini!");
-                this.value = ""; // Resetează selecția dacă depășește limita
+                this.value = "";
             }
         });
     }
