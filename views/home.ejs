@@ -10,16 +10,15 @@
 <div class="row justify-content-center pt-5 pb-5"> 
     <div class="col-12 col-md-8 col-lg-6">
         <div class="input-group position-relative shadow-lg rounded-pill bg-white">
-            
             <span class="input-group-text bg-transparent rounded-start-pill py-2 border-0">
                 <div class="d-flex flex-column align-items-center me-2 flag-input-box">
-                    <img src="/img/drapel-md.png" class="flag-icon me-1">
+                    <img src="/img/drapel-md.png" class="flag-icon me-1" style="width: 20px;">
                     <span class="fw-bold text-dark" style="font-size: 0.7em;">MD</span>
                 </div>
             </span>
             
             <input type="text" id="plate-search" name="plateNumber" class="form-control rounded-0 border-0" 
-                   placeholder="Caută după număr ..." maxlength="7" style="height: 50px;">
+                   placeholder="Caută după număr (Ex: ABC 123)" style="height: 50px;">
                    
             <button id="clear-search" class="btn btn-transparent rounded-end-pill" type="button">
                 <i class="bi bi-x-lg"></i>
@@ -39,14 +38,11 @@
                 <div class="col">
                     <a href="/car/<%= car._id %>" class="text-decoration-none text-dark d-block">
                         <div class="card shadow-sm h-100 border-0 overflow-hidden">
-                            <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="<%= car.make %> <%= car.model %>" style="height: 100px; object-fit: cover;">
-                            <div class="card-body p-2 position-relative">
-                                
-                                <i class="bi bi-chevron-right position-absolute top-0 end-0 m-2 fs-6 text-primary"></i>
-                                
+                            <img src="<%= car.imageUrls[0] %>" class="card-img-top" alt="<%= car.make %>" style="height: 100px; object-fit: cover;">
+                            <div class="card-body p-2">
                                 <div class="d-flex align-items-start">
                                     <div class="d-flex flex-column align-items-center me-2">
-                                        <img src="/img/drapel-md.png" class="flag-icon me-1">
+                                        <img src="/img/drapel-md.png" style="width: 15px;">
                                         <span class="fw-bold" style="font-size: 0.6em;">MD</span>
                                     </div>
                                     <div>
@@ -66,44 +62,35 @@
 </div>
 
 <%- include('partials/footer') %>
+
 <script>
     const searchInput = document.getElementById('plate-search');
     const clearBtn = document.getElementById('clear-search');
 
     if (searchInput) {
         searchInput.addEventListener('input', function (e) {
-            // 1. Luăm valoarea, o facem mare și scoatem orice spațiu existent
-            let val = e.target.value.toUpperCase().replace(/\s/g, '');
+            // 1. Curățăm spațiile și limităm la 6 caractere brute
+            let val = e.target.value.toUpperCase().replace(/\s/g, '').replace(/[^A-Z0-9]/g, '').substring(0, 6);
             
-            // 2. Extragem doar literele (primele 3)
+            // 2. Extragem literele (primele 3)
             let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
             
-            // 3. Extragem doar cifrele (următoarele 3), pornind de după litere
-            // val.substring(letters.length) ne asigură că sărim peste litere și luăm restul ca cifre
-            let numbers = val.substring(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
+            // 3. Extragem cifrele (restul după litere)
+            let numbers = val.substring(letters.length).replace(/[^0-9]/g, '');
             
-            // 4. Reconstruim valoarea cu un spațiu între ele dacă avem cifre
-            let formattedValue = letters;
+            // 4. Formăm rezultatul cu spațiu
+            let formatted = letters;
             if (numbers.length > 0) {
-                formattedValue += " " + numbers;
+                formatted += " " + numbers;
             }
-            
-            e.target.value = formattedValue;
+            e.target.value = formatted;
         });
     }
 
-    // Resetare căutare
     if (clearBtn && searchInput) {
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
             searchInput.focus();
         });
-    }
-
-    // Curățare URL mesaj succes
-    if (window.location.search.includes('success=MasinaÎnregistrată')) {
-        setTimeout(() => {
-            window.history.replaceState({}, document.title, "/");
-        }, 100);
     }
 </script>

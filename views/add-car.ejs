@@ -5,7 +5,7 @@
         <div class="card shadow-lg p-4 border-0">
             <h2 class="card-title text-center mb-4 fw-bold">Adaugă o Mașină</h2>
             
-            <% if(error) { %>
+            <% if(typeof error !== 'undefined' && error) { %>
                 <div class="alert alert-danger" role="alert"><%= error %></div>
             <% } %>
             
@@ -15,11 +15,11 @@
                     <label for="plateNumber" class="form-label fw-bold">Număr de Înmatriculare</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light">
-                            <img src="/img/drapel-md.png" class="flag-icon me-1">
+                            <img src="/img/drapel-md.png" class="flag-icon me-1" style="width: 20px;">
                             <span class="fw-bold">MD</span>
                         </span>
                         <input type="text" name="plateNumber" id="plateNumber" class="form-control form-control-lg" 
-                               placeholder="Număr de Înmatriculare (Ex: ABC 123)" maxlength="7" required>
+                               placeholder="Ex: ABC 123" required>
                     </div>
                 </div>
                 
@@ -60,24 +60,26 @@
     </div>
 </div>
 
+
+
 <script>
     const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
     const plateInput = document.getElementById('plateNumber');
 
-    // --- 1. LOGICA NOUĂ ȘI REPARATĂ PENTRU NUMĂR ---
+    // --- 1. LOGICA PENTRU FORMATARE NUMĂR (Litere + Spațiu + Cifre) ---
     if (plateInput) {
         plateInput.addEventListener('input', function (e) {
-            // Eliminăm orice spațiu existent și facem litere mari
-            let val = e.target.value.toUpperCase().replace(/\s/g, '');
+            // Curățăm tot ce nu e literă sau cifră și limităm la 6 caractere brute (fără spațiu)
+            let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
             
-            // Reținem doar literele (primele 3)
+            // Extragem primele 3 caractere (trebuie să fie litere)
             let letters = val.substring(0, 3).replace(/[^A-Z]/g, '');
             
-            // Reținem cifrele (următoarele 3), pornind de unde s-au terminat literele
-            let numbers = val.substring(letters.length, letters.length + 3).replace(/[^0-9]/g, '');
+            // Extragem restul de caractere (trebuie să fie cifre)
+            let numbers = val.substring(letters.length).replace(/[^0-9]/g, '');
             
-            // Reconstruim string-ul final: Litere + Spațiu (dacă avem cifre) + Cifre
+            // Reconstruim valoarea finală cu spațiu
             let formatted = letters;
             if (numbers.length > 0) {
                 formatted += " " + numbers;
@@ -87,7 +89,7 @@
         });
     }
 
-    // --- 2. LOGICA PENTRU MODELE (Rămâne neschimbată) ---
+    // --- 2. LOGICA PENTRU MODELE DINAMICE ---
     const modelsData = {
         "Audi": ["A3","A4","A6","Q5"],
         "BMW": ["X1","X3","X5","M3"],
@@ -109,13 +111,13 @@
         });
     }
 
-    // --- 3. VALIDARE IMAGINI ---
+    // --- 3. VALIDARE NUMĂR IMAGINI ---
     const carImageInput = document.getElementById('carImage');
     if (carImageInput) {
         carImageInput.addEventListener('change', function() {
             if (this.files.length > 3) {
                 alert("Poți selecta maxim 3 imagini!");
-                this.value = ""; 
+                this.value = ""; // Resetează selecția dacă depășește limita
             }
         });
     }
