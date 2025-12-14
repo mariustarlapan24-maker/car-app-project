@@ -195,9 +195,9 @@ app.get('/chat', async (req, res) => {
         res.render('chat', {
             title: 'Chat General',
             userId: req.session.userId,
-            username: req.session.username || 'User_' + req.session.userId.toString().substring(0, 4),
-            roomId: 'general',
-            oldMessages: oldMessages // Trimitem istoricul către EJS
+            username: req.session.username || 'Utilizator',
+            roomId: 'general', // <--- ADAUGĂ ACEASTĂ LINIE
+            oldMessages: oldMessages || [] 
         });
     } catch (err) {
         console.error(err);
@@ -221,9 +221,9 @@ app.get('/chat/private/:carId', async (req, res) => {
         res.render('chat', {
             title: `Chat: ${car.plateNumber}`,
             userId: req.session.userId,
-            username: req.session.username || 'User_' + req.session.userId.toString().substring(0, 4),
+            username: req.session.username || 'Utilizator',
             roomId: carId.toString(),
-            oldMessages: oldMessages
+            oldMessages: oldMessages || [] // Dacă e gol, trimite un array gol, nu "undefined"
         });
     } catch (err) {
         res.status(500).send("Eroare server.");
@@ -283,9 +283,10 @@ app.post('/guest-login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-    req.session.destroy(()=> {
-        res.redirect('/');
-    });
+    req.session.destroy((err) => {
+        res.clearCookie('connect.sid'); // Această linie curăță complet sesiunea
+        res.redirect('/');
+    });
 });
  
 // ==========================================================
@@ -383,8 +384,8 @@ io.on('connection', (socket) => {
             // Trimitem mesajul salvat tuturor celor din cameră
             io.to(data.roomId).emit('message', {
                 text: savedMessage.text,
-                sender: savedMessage.senderName,
-                time: new Date(savedMessage.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
+                senderName: savedMessage.senderName, // Trimite exact cum e în baza de date
+                timestamp: savedMessage.timestamp // Trimite data brută, o formatăm în browser
             });
         } catch (err) {
             console.error("Eroare salvare mesaj:", err);
