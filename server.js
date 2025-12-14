@@ -180,32 +180,58 @@ app.get('/profile', async (req, res) => {
 });
 
 // ==========================================
-// --- RUTE CHAT ---
+// --- RUTE CHAT (VERSIUNEA NOUĂ CU INBOX) ---
 // ==========================================
 
-// 1. Chat General
+// 1. Chat General (Aici calculăm Inbox-ul pentru prima dată)
 app.get('/chat', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     try {
-        // Căutăm ultimele 50 de mesaje din camera generală
-        const oldMessages = await Message.find({ roomId: 'general' })
-            .sort({ timestamp: 1 })
-            .limit(50);
+        const generalMessages = await Message.find({ roomId: 'general' })
+            .sort({ timestamp: 1 }).limit(50);
+
+        // Găsim mașinile utilizatorului logat
+        const myCars = await Car.find({ owner: req.session.userId });
+        const myCarIds = myCars.map(c => c._id.toString());
+
+        // Găsim mesaje private (nu 'general') unde sunt implicat
+        const privateMessages = await Message.find({
+            roomId: { $ne: 'general' },
+            $or: [
+                { sender: req.session.userId }, // Mesaje trimise de mine
+                { roomId: { $in: myCarIds } }   // Mesaje trimise către mașinile mele
+            ]
+        }).sort({ timestamp: -1 });
+
+        // Grupăm mesajele pentru a crea lista de conversații unice
+        const inboxMap = {};
+        for (const msg of privateMessages) {
+            if (!inboxMap[msg.roomId]) {
+                const car = await Car.findById(msg.roomId);
+                inboxMap[msg.roomId] = {
+                    roomId: msg.roomId,
+                    carPlate: car ? car.plateNumber : 'Mașină',
+                    lastMessage: msg.text,
+                    timestamp: msg.timestamp
+                };
+            }
+        }
 
         res.render('chat', {
-            title: 'Chat General',
+            title: 'Mesagerie',
             userId: req.session.userId,
             username: req.session.username || 'Utilizator',
-            roomId: 'general', // <--- ADAUGĂ ACEASTĂ LINIE
-            oldMessages: oldMessages || [] 
+            roomId: 'general',
+            oldMessages: generalMessages,
+            inbox: Object.values(inboxMap) // Noua variabilă pentru Inbox
         });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Eroare la încărcarea chat-ului.");
+        res.status(500).send("Eroare la încărcarea mesageriei.");
     }
 });
 
-// 2. Chat Privat
+// 2. Chat Privat (Și aici trimitem Inbox-ul ca să rămână vizibil în lateral)
 app.get('/chat/private/:carId', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     try {
@@ -213,17 +239,37 @@ app.get('/chat/private/:carId', async (req, res) => {
         const car = await Car.findById(carId);
         if (!car) return res.status(404).send("Mașina nu există.");
 
-        // Căutăm mesajele specifice acestei mașini (roomId = carId)
         const oldMessages = await Message.find({ roomId: carId })
-            .sort({ timestamp: 1 })
-            .limit(50);
+            .sort({ timestamp: 1 }).limit(50);
+
+        // Recalculăm Inbox-ul și aici
+        const myCars = await Car.find({ owner: req.session.userId });
+        const myCarIds = myCars.map(c => c._id.toString());
+        const privateMessages = await Message.find({
+            roomId: { $ne: 'general' },
+            $or: [{ sender: req.session.userId }, { roomId: { $in: myCarIds } }]
+        }).sort({ timestamp: -1 });
+
+        const inboxMap = {};
+        for (const msg of privateMessages) {
+            if (!inboxMap[msg.roomId]) {
+                const c = await Car.findById(msg.roomId);
+                inboxMap[msg.roomId] = {
+                    roomId: msg.roomId,
+                    carPlate: c ? c.plateNumber : 'Mașină',
+                    lastMessage: msg.text,
+                    timestamp: msg.timestamp
+                };
+            }
+        }
 
         res.render('chat', {
             title: `Chat: ${car.plateNumber}`,
             userId: req.session.userId,
             username: req.session.username || 'Utilizator',
             roomId: carId.toString(),
-            oldMessages: oldMessages || [] // Dacă e gol, trimite un array gol, nu "undefined"
+            oldMessages: oldMessages || [],
+            inbox: Object.values(inboxMap)
         });
     } catch (err) {
         res.status(500).send("Eroare server.");
