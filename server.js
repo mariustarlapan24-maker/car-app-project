@@ -96,6 +96,9 @@ app.use((req, res, next)=> {
     res.locals.isGuest = !!req.session.isGuest && !req.session.userId;
     res.locals.userId = req.session.userId || null;
     res.locals.username = req.session.username || null;
+
+    res.locals.currentPage = req.path;
+    
     next();
 });
 

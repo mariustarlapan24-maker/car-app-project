@@ -17,7 +17,7 @@
                 <span class="d-block">Adaugă</span>
             </a>
             
-            <a href="/chat" class="tab <%= (activeTitle.indexOf('Mesaje') !== -1 || activeTitle.indexOf('Chat') !== -1) ? 'active' : '' %> text-decoration-none">
+            <a href="/chat" class="tab <%= (activeTitle.includes('Mesager') || activeTitle.includes('Chat')) ? 'active' : '' %> text-decoration-none">
                 <i class="bi bi-chat-dots-fill"></i>
                 <span class="d-block">Chat</span>
             </a>
