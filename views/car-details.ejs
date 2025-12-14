@@ -22,14 +22,41 @@
                     </div>
                 </div>
 
-                <div class="car-image-box bg-light border-top border-bottom" style="height: 350px; overflow: hidden;">
+                <div class="car-image-box bg-light border-top border-bottom" style="height: 350px; overflow: hidden; position: relative;">
                     <% if (car.imageUrls && car.imageUrls.length > 0) { %>
-                        <img src="<%= car.imageUrls[0] %>" class="w-100 h-100" style="object-fit: cover;" alt="Imagine Mașină">
+                        <div id="carCarousel" class="carousel slide h-100" data-bs-ride="carousel">
+                            <% if (car.imageUrls.length > 1) { %>
+                                <div class="carousel-indicators">
+                                    <% car.imageUrls.forEach((url, index) => { %>
+                                        <button type="button" data-bs-target="#carCarousel" data-bs-slide-to="<%= index %>" class="<%= index === 0 ? 'active' : '' %>" aria-current="<%= index === 0 ? 'true' : 'false' %>"></button>
+                                    <% }); %>
+                                </div>
+                            <% } %>
+
+                            <div class="carousel-inner h-100">
+                                <% car.imageUrls.forEach((url, index) => { %>
+                                    <div class="carousel-item h-100 <%= index === 0 ? 'active' : '' %>">
+                                        <img src="<%= url %>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Imagine Mașină">
+                                    </div>
+                                <% }); %>
+                            </div>
+
+                            <% if (car.imageUrls.length > 1) { %>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Anterior</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Următor</span>
+                                </button>
+                            <% } %>
+                        </div>
                     <% } else if (car.imageUrl) { %>
                         <img src="<%= car.imageUrl %>" class="w-100 h-100" style="object-fit: cover;" alt="Imagine Mașină">
                     <% } else { %>
                         <div class="d-flex align-items-center justify-content-center h-100 text-muted italic">
-                            <i class="bi bi-image me-2"></i> Imagine neisponibilă
+                            <i class="bi bi-image me-2"></i> Imagine indisponibilă
                         </div>
                     <% } %>
                 </div>
