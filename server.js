@@ -63,10 +63,11 @@ app.use(session({
  
 // --- MIDDLEWARE UTILIZATOR ---
 app.use((req, res, next)=> {
-    res.locals.isLoggedIn = !!req.session.userId;
-    res.locals.isGuest = !!req.session.isGuest && !req.session.userId;
-    res.locals.userId = req.session.userId || null; // <--- ADAUGĂ ACEASTĂ LINIE
-    next();
+    res.locals.isLoggedIn = !!req.session.userId;
+    res.locals.isGuest = !!req.session.isGuest && !req.session.userId;
+    res.locals.userId = req.session.userId || null;
+    res.locals.username = req.session.username || null; // <--- ADAUGĂ ACEASTA
+    next();
 });
  
 // ==========================================================
@@ -89,6 +90,15 @@ const carSchema = new mongoose.Schema({
     addedDate: { type: Date, default: Date.now }
 });
 const Car = mongoose.model('Car', carSchema);
+
+const messageSchema = new mongoose.Schema({
+    roomId: { type: String, required: true }, // 'general' sau ID-ul mașinii
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    senderName: { type: String, required: true },
+    text: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model('Message', messageSchema);
  
 // ==========================================================
 // --- RUTE GET & AUTH ---
@@ -174,38 +184,50 @@ app.get('/profile', async (req, res) => {
 // ==========================================
 
 // 1. Chat General
-app.get('/chat', (req, res)=> {
-    if (!req.session.userId) return res.redirect('/login');
-    res.render('chat', {
-        title: 'Chat General',
-        userId: req.session.userId,
-        // Am adăugat .toString() aici:
-        username: 'User_' + req.session.userId.toString().substring(0, 4),
-        roomId: 'general'
-    });
+app.get('/chat', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    try {
+        // Căutăm ultimele 50 de mesaje din camera generală
+        const oldMessages = await Message.find({ roomId: 'general' })
+            .sort({ timestamp: 1 })
+            .limit(50);
+
+        res.render('chat', {
+            title: 'Chat General',
+            userId: req.session.userId,
+            username: req.session.username || 'User_' + req.session.userId.toString().substring(0, 4),
+            roomId: 'general',
+            oldMessages: oldMessages // Trimitem istoricul către EJS
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Eroare la încărcarea chat-ului.");
+    }
 });
 
 // 2. Chat Privat
 app.get('/chat/private/:carId', async (req, res) => {
-    if (!req.session.userId) return res.redirect('/login');
-    try {
-        const carId = req.params.carId;
-        if (!mongoose.Types.ObjectId.isValid(carId)) return res.status(400).send("ID invalid.");
+    if (!req.session.userId) return res.redirect('/login');
+    try {
+        const carId = req.params.carId;
+        const car = await Car.findById(carId);
+        if (!car) return res.status(404).send("Mașina nu există.");
 
-        const car = await Car.findById(carId);
-        if (!car) return res.status(404).send("Mașina nu există.");
+        // Căutăm mesajele specifice acestei mașini (roomId = carId)
+        const oldMessages = await Message.find({ roomId: carId })
+            .sort({ timestamp: 1 })
+            .limit(50);
 
-        res.render('chat', {
-            title: `Chat: ${car.plateNumber}`,
-            userId: req.session.userId,
-            // Și aici am adăugat .toString():
-            username: 'User_' + req.session.userId.toString().substring(0, 4),
-            roomId: carId.toString()
-        });
-    } catch (err) {
-        console.error("Eroare la deschiderea chat-ului privat:", err);
-        res.status(500).send("Eroare de server.");
-    }
+        res.render('chat', {
+            title: `Chat: ${car.plateNumber}`,
+            userId: req.session.userId,
+            username: req.session.username || 'User_' + req.session.userId.toString().substring(0, 4),
+            roomId: carId.toString(),
+            oldMessages: oldMessages
+        });
+    } catch (err) {
+        res.status(500).send("Eroare server.");
+    }
 });
 
 app.get('/api/search', async (req, res) => {
@@ -228,8 +250,9 @@ app.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ fullName, email, password: hashedPassword });
         await newUser.save();
-        req.session.userId = newUser._id;
-        res.redirect('/');
+        req.session.userId = newUser._id;
+        req.session.username = newUser.fullName; // <--- ADAUGĂ ACEASTA
+        res.redirect('/');
     } catch (error) {
         if (error.code === 11000) return res.render('register', { error: 'Acest email este deja înregistrat.', title: 'Creează Cont' });
         res.render('register', { error: 'A apărut o eroare la înregistrare.', title: 'Creează Cont' });
@@ -244,8 +267,9 @@ app.post('/login', async (req, res) => {
             return res.render('login', { error: 'Email sau parolă incorectă.', email, title: 'Login Car-App' });
         }
         req.session.userId = user._id;
-        req.session.isGuest = false;
-        res.redirect('/');
+        req.session.username = user.fullName; // <--- ADAUGĂ ACEASTA
+        req.session.isGuest = false;
+        res.redirect('/');
     } catch (error) {
         console.error("Eroare la login:", error);
         res.render('login', { error: 'A apărut o eroare de server.', title: 'Login Car-App' });
@@ -339,18 +363,35 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
 // --- CHAT (Socket.IO) ---
 
 io.on('connection', (socket) => {
-    socket.on('joinRoom', (roomId) => {
-        socket.join(roomId);
-    });
-    socket.on('chatMessage', (data) => {
-        io.to(data.roomId).emit('message', {
-            text: data.message,
-            sender: data.senderName,
-            time: new Date().toLocaleTimeString('ro-RO')
-        });
-    });
+    socket.on('joinRoom', (roomId) => {
+        socket.join(roomId);
+    });
+
+    socket.on('chatMessage', async (data) => {
+        try {
+            // Cream obiectul mesajului
+            const newMessage = new Message({
+                roomId: data.roomId,
+                sender: data.userId,
+                senderName: data.senderName,
+                text: data.message
+            });
+
+            // Salvăm în MongoDB
+            const savedMessage = await newMessage.save();
+
+            // Trimitem mesajul salvat tuturor celor din cameră
+            io.to(data.roomId).emit('message', {
+                text: savedMessage.text,
+                sender: savedMessage.senderName,
+                time: new Date(savedMessage.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
+            });
+        } catch (err) {
+            console.error("Eroare salvare mesaj:", err);
+        }
+    });
 });
- 
+
 // --- SERVER START ---
 server.listen(PORT, () => {
     console.log(`Serverul rulează pe portul http://localhost:${PORT}`);
