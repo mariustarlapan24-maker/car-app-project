@@ -29,6 +29,35 @@ const IK_URL_ENDPOINT = 'https://upload.imagekit.io';
 const IK_SECRET = process.env.IMAGEKIT_PRIVATE_KEY; 
 const IK_PUBLIC = process.env.IMAGEKIT_PUBLIC_KEY; 
 
+// --- BAZA DE DATE MASINI (MUTATĂ AICI PENTRU A FI GLOBALĂ) ---
+const carDatabase = {
+    "Dacia": ["Logan", "Duster", "Sandero", "Lodgy", "Dokker", "Spring", "Solenza"],
+    "Skoda": ["Octavia", "Superb", "Fabia", "Kodiaq", "Karoq", "Rapid", "Scala"],
+    "Toyota": ["Corolla", "Camry", "RAV4", "Prius", "Aurion", "Yaris", "Land Cruiser", "Hilux", "C-HR", "Avensis"],
+    "Volkswagen": ["Golf", "Passat", "Tiguan", "Touareg", "Jetta", "Polo", "Transporter", "Caddy", "Arteon", "Sharan", "Touran"],
+    "BMW": ["Seria 1", "Seria 3", "Seria 5", "Seria 7", "X1", "X3", "X5", "X6", "X7", "M3", "M5"],
+    "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLE", "GLC", "GLS", "Sprinter", "Vito", "G-Class", "CLA"],
+    "Audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q3", "Q5", "Q7", "Q8", "e-tron"],
+    "Hyundai": ["Tucson", "Santa Fe", "Kona", "Elantra", "Accent", "Ioniq", "i20", "i30"],
+    "Kia": ["Sportage", "Sorento", "Ceed", "Rio", "Niro", "Stonic", "Picanto"],
+    "Nissan": ["Qashqai", "X-Trail", "Juke", "Leaf", "Navara", "Micra", "Note"],
+    "Renault": ["Megane", "Clio", "Kadjar", "Captur", "Scenic", "Master", "Kangoo", "Fluence", "Zoe"],
+    "Ford": ["Focus", "Fiesta", "Kuga", "Mondeo", "Transit", "Ranger", "EcoSport", "Puma"],
+    "Volvo": ["XC40", "XC60", "XC90", "S60", "S90", "V60", "V90"],
+    "Lexus": ["RX", "NX", "UX", "ES", "LS", "IS", "GX"],
+    "Honda": ["Civic", "CR-V", "HR-V", "Accord", "Jazz", "Insight"],
+    "Mazda": ["CX-3", "CX-5", "CX-30", "Mazda2", "Mazda3", "Mazda6", "CX-9"],
+    "Mitsubishi": ["Outlander", "L200", "ASX", "Pajero", "Eclipse Cross", "Colt"],
+    "Suzuki": ["Vitara", "SX4 S-Cross", "Swift", "Jimny", "Ignis"],
+    "Opel": ["Astra", "Insignia", "Corsa", "Grandland X", "Mokka", "Zafira", "Vivaro"],
+    "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Expert"],
+    "Citroen": ["C3", "C4", "C5 Aircross", "Berlingo", "Jumper"],
+    "Land Rover": ["Range Rover", "Range Rover Sport", "Discovery", "Defender", "Evoque", "Velar"],
+    "Porsche": ["Cayenne", "Macan", "Panamera", "Taycan", "911"],
+    "Geely": ["Coolray", "Atlas Pro", "Tugella", "Monjaro"],
+    "Haval": ["Jolion", "H6", "Dargo"]
+};
+
 // --- CONFIGURARE MULTER (Stocare în memorie) ---
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -154,34 +183,6 @@ app.get('/register', (req, res)=> {
 
 app.get('/add-car', (req, res)=> {
     if (!req.session.userId) return res.redirect('/login');
-
-    const carDatabase = {
-        "Dacia": ["Logan", "Duster", "Sandero", "Lodgy", "Dokker", "Spring", "Solenza"],
-        "Skoda": ["Octavia", "Superb", "Fabia", "Kodiaq", "Karoq", "Rapid", "Scala"],
-        "Toyota": ["Corolla", "Camry", "RAV4", "Prius", "Aurion", "Yaris", "Land Cruiser", "Hilux", "C-HR", "Avensis"],
-        "Volkswagen": ["Golf", "Passat", "Tiguan", "Touareg", "Jetta", "Polo", "Transporter", "Caddy", "Arteon", "Sharan", "Touran"],
-        "BMW": ["Seria 1", "Seria 3", "Seria 5", "Seria 7", "X1", "X3", "X5", "X6", "X7", "M3", "M5"],
-        "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLE", "GLC", "GLS", "Sprinter", "Vito", "G-Class", "CLA"],
-        "Audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q3", "Q5", "Q7", "Q8", "e-tron"],
-        "Hyundai": ["Tucson", "Santa Fe", "Kona", "Elantra", "Accent", "Ioniq", "i20", "i30"],
-        "Kia": ["Sportage", "Sorento", "Ceed", "Rio", "Niro", "Stonic", "Picanto"],
-        "Nissan": ["Qashqai", "X-Trail", "Juke", "Leaf", "Navara", "Micra", "Note"],
-        "Renault": ["Megane", "Clio", "Kadjar", "Captur", "Scenic", "Master", "Kangoo", "Fluence", "Zoe"],
-        "Ford": ["Focus", "Fiesta", "Kuga", "Mondeo", "Transit", "Ranger", "EcoSport", "Puma"],
-        "Volvo": ["XC40", "XC60", "XC90", "S60", "S90", "V60", "V90"],
-        "Lexus": ["RX", "NX", "UX", "ES", "LS", "IS", "GX"],
-        "Honda": ["Civic", "CR-V", "HR-V", "Accord", "Jazz", "Insight"],
-        "Mazda": ["CX-3", "CX-5", "CX-30", "Mazda2", "Mazda3", "Mazda6", "CX-9"],
-        "Mitsubishi": ["Outlander", "L200", "ASX", "Pajero", "Eclipse Cross", "Colt"],
-        "Suzuki": ["Vitara", "SX4 S-Cross", "Swift", "Jimny", "Ignis"],
-        "Opel": ["Astra", "Insignia", "Corsa", "Grandland X", "Mokka", "Zafira", "Vivaro"],
-        "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Expert"],
-        "Citroen": ["C3", "C4", "C5 Aircross", "Berlingo", "Jumper"],
-        "Land Rover": ["Range Rover", "Range Rover Sport", "Discovery", "Defender", "Evoque", "Velar"],
-        "Porsche": ["Cayenne", "Macan", "Panamera", "Taycan", "911"],
-        "Geely": ["Coolray", "Atlas Pro", "Tugella", "Monjaro"],
-        "Haval": ["Jolion", "H6", "Dargo"]
-    };
 
     res.render('add-car', { 
         title: 'Adaugă mașină', 
@@ -387,7 +388,7 @@ app.post('/logout', (req, res) => {
 
 // ==========================================================
 // --- ADĂUGĂ MAȘINĂ (CU VERIFICARE CORECTĂ) ---
-app.post('/add-car', upload.single('carImage'), async (req, res) => {
+app.post('/add-car', upload.array('carImage', 3), async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
 
     const { plateNumber, make, model } = req.body;
@@ -398,53 +399,53 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
         const existingCar = await Car.findOne({ plateNumber: plate });
         
         if (existingCar) {
-            return res.render('add-car', { title: 'Adaugă mașină', error: 'O mașină cu acest număr există deja.' });
+            return res.render('add-car', { 
+                title: 'Adaugă mașină', 
+                error: 'O mașină cu acest număr există deja.',
+                carDatabase: carDatabase 
+            });
         }
 
-        const file = req.file;
-        if (!file) return res.render('add-car', { title: 'Adaugă mașină', error: 'Vă rugăm să încărcați o imagine.' });
+        const files = req.files; // Notă: Multer pune fișierele în req.files (plural)
+        if (!files || files.length === 0) {
+            return res.render('add-car', { 
+                title: 'Adaugă mașină', 
+                error: 'Vă rugăm să încărcați cel puțin o imagine.',
+                carDatabase: carDatabase 
+            });
+        }
 
-        // 1. Conversie în base64 
-        const base64File = file.buffer.toString('base64');
-        
-        // 2. Autentificare ImageKit
+        const imageUrls = [];
         const auth = Buffer.from(IK_SECRET + ":").toString("base64");
-        
-        // 3. Formarea datelor
-        const formData = new URLSearchParams();
-        formData.append('file', base64File);
-        formData.append('fileName', `${Date.now()}-${file.originalname}`);
-        formData.append('folder', 'car-app-uploads');
-        
-        // 4. Încărcarea folosind Fetch
-        const uploadUrl = `${IK_URL_ENDPOINT}/api/v1/files/upload`;
-        
-        const uploadResponse = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${auth}`, 
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: formData
-        });
-        
-        const result = await uploadResponse.json();
-        
-        if (!uploadResponse.ok) {
-            console.error('Eroare ImageKit direct:', result);
-            if (result.statusCode === 401 || (result.message && result.message.includes('Authentication'))) {
-                throw new Error("Eroare de autentificare ImageKit.");
-            }
-            throw new Error(result.message || 'Eroare la încărcarea imaginii.');
-        }
 
-        const imageUrl = result.url; 
+        // Folosim o buclă pentru a încărca fiecare imagine în parte
+        for (const file of files) {
+            const base64File = file.buffer.toString('base64');
+            const formData = new URLSearchParams();
+            formData.append('file', base64File);
+            formData.append('fileName', `${Date.now()}-${file.originalname}`);
+            formData.append('folder', 'car-app-uploads');
+
+            const uploadResponse = await fetch(`${IK_URL_ENDPOINT}/api/v1/files/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${auth}`, 
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData
+            });
+
+            const result = await uploadResponse.json();
+            if (!uploadResponse.ok) throw new Error(result.message || 'Eroare la ImageKit');
+            
+            imageUrls.push(result.url);
+        } 
 
         const newCar = new Car({
             plateNumber: plate,
             make,
             model,
-            imageUrls: [imageUrl],
+            imageUrls: imageUrls, // Aici folosim array-ul creat în bucla de mai sus
             owner: req.session.userId
         });
 
@@ -455,7 +456,11 @@ app.post('/add-car', upload.single('carImage'), async (req, res) => {
 
     } catch (error) {
         console.error('--- EROARE ADD-CAR ---', error);
-        res.render('add-car', { title: 'Adaugă mașină', error: error.message || 'A apărut o eroare la salvare.' });
+        res.render('add-car', { 
+            title: 'Adaugă mașină', 
+            error: error.message || 'A apărut o eroare la salvare.',
+            carDatabase: carDatabase
+        });
     }
 });
 
