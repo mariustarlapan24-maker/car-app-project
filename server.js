@@ -173,45 +173,38 @@ app.get('/profile', async (req, res) => {
 // --- RUTE CHAT ---
 // ==========================================
 
-// 1. Chat General (din bara de navigare)
+// 1. Chat General
 app.get('/chat', (req, res)=> {
     if (!req.session.userId) return res.redirect('/login');
     res.render('chat', {
         title: 'Chat General',
         userId: req.session.userId,
-        username: 'User_' + req.session.userId.substring(0, 4),
-        roomId: 'general' // Trimitem roomId obligatoriu pentru a evita eroarea 500
+        // Am adăugat .toString() aici:
+        username: 'User_' + req.session.userId.toString().substring(0, 4),
+        roomId: 'general'
     });
 });
 
-// 2. Chat Privat (deschis de la o mașină specifică)
+// 2. Chat Privat
 app.get('/chat/private/:carId', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
-    
     try {
         const carId = req.params.carId;
-
-        // Validăm formatul ID-ului pentru a nu crăpa baza de date
-        if (!mongoose.Types.ObjectId.isValid(carId)) {
-            return res.status(400).send("ID-ul mașinii este invalid.");
-        }
+        if (!mongoose.Types.ObjectId.isValid(carId)) return res.status(400).send("ID invalid.");
 
         const car = await Car.findById(carId);
-        
-        if (!car) {
-            // Dacă mașina nu e găsită, nu facem redirect, ci dăm un mesaj clar
-            return res.status(404).send("Mașina nu a fost găsită în baza de date.");
-        }
+        if (!car) return res.status(404).send("Mașina nu există.");
 
         res.render('chat', {
             title: `Chat: ${car.plateNumber}`,
             userId: req.session.userId,
-            username: 'User_' + req.session.userId.substring(0, 4),
-            roomId: carId.toString() // ID-ul mașinii devine numele camerei
+            // Și aici am adăugat .toString():
+            username: 'User_' + req.session.userId.toString().substring(0, 4),
+            roomId: carId.toString()
         });
     } catch (err) {
         console.error("Eroare la deschiderea chat-ului privat:", err);
-        res.status(500).send("Eroare de server la încărcarea chat-ului.");
+        res.status(500).send("Eroare de server.");
     }
 });
 
