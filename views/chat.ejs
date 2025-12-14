@@ -20,7 +20,12 @@
                         <% inbox.forEach(item => { %>
                             <a href="/chat/private/<%= item.roomId %>" class="list-group-item list-group-item-action py-3 <%= roomId === item.roomId ? 'active bg-primary border-primary' : '' %>">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1 fw-bold"><%= item.carPlate %></h6>
+                                    <h6 class="mb-1 fw-bold">
+                                        <%= item.carPlate %>
+                                        <% if (item.isNew && roomId !== item.roomId) { %>
+                                            <span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.6em;">NOU</span>
+                                        <% } %>
+                                    </h6>
                                     <small class="<%= roomId === item.roomId ? 'text-white-50' : 'text-muted' %>">
                                         <%= new Date(item.timestamp).toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}) %>
                                     </small>
@@ -77,12 +82,14 @@
     const messagesContainer = document.getElementById('chat-messages');
     const messagesList = document.getElementById('messages-list');
 
-    function appendMessage(data) {
+    // CORECT: Funcția primește și parametrul shouldAnimate (setat pe true implicit)
+    function appendMessage(data, shouldAnimate = true) {
         const div = document.createElement('div');
         const isMe = (data.senderName === username);
-        
+    
         div.className = `mb-3 d-flex flex-column ${isMe ? 'align-items-end' : 'align-items-start'}`;
-        
+    
+        // (Aici rămâne codul tău pentru timeStr și div.innerHTML neschimbat)
         let timeStr = "";
         try {
             const date = data.timestamp ? new Date(data.timestamp) : new Date();
@@ -98,20 +105,45 @@
             </div>
             <small class="text-muted mt-1" style="font-size: 0.6em;">${timeStr}</small>
         `;
+
+        // --- LOGICA CORECTĂ PENTRU ANIMAȚIE ---
+        if (shouldAnimate) {
+            // Dacă este mesaj nou, îl facem invizibil întâi
+            div.style.opacity = '0';
+            div.style.transform = 'translateY(10px)';
+            div.style.transition = 'all 0.3s ease';
         
-        messagesList.appendChild(div);
+            messagesList.appendChild(div);
+
+            setTimeout(() => {
+                div.style.opacity = '1';
+                div.style.transform = 'translateY(0)';
+            }, 10);
+        } else {
+            // Dacă este din istoric (false), îl punem direct fără stiluri de animație
+            messagesList.appendChild(div);
+        }
+
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // Încărcare Istoric
-    const rawHistory = '<%- JSON.stringify(oldMessages) %>';
-    try {
-        const history = JSON.parse(rawHistory);
-        if (Array.isArray(history)) {
-            history.forEach(msg => appendMessage(msg));
-        }
-    } catch (err) { console.error("Eroare istoric:", err); }
+    // Folosim JSON.parse pe un string generat de EJS. 
+    // Folosim backticks (`) pentru a evita problemele cu ghilimelele din mesaje.
+    const historyData = `<%- JSON.stringify(oldMessages || []) %>`;
+    const history = JSON.parse(historyData);
 
+    // --- PUNE ACEST BLOC NOU AICI ---
+    if (Array.isArray(history)) {
+        history.forEach(msg => {
+            appendMessage(msg, false); // 'false' spune funcției să nu animeze istoricul
+        });
+    
+        setTimeout(() => {
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }, 100);
+    }
     socket.emit('joinRoom', roomId);
 
     chatForm.addEventListener('submit', (e) => {
@@ -130,11 +162,7 @@
     });
 
     socket.on('message', (data) => {
-        appendMessage({
-            senderName: data.senderName,
-            text: data.text,
-            timestamp: data.timestamp
-        });
+        appendMessage(data); // Aici shouldAnimate va fi automat true
     });
 </script>
 
