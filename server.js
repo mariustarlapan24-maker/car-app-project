@@ -154,7 +154,40 @@ app.get('/register', (req, res)=> {
 
 app.get('/add-car', (req, res)=> {
     if (!req.session.userId) return res.redirect('/login');
-    res.render('add-car', { title: 'Adaugă mașină', error: null });
+
+    const carDatabase = {
+        "Dacia": ["Logan", "Duster", "Sandero", "Lodgy", "Dokker", "Spring", "Solenza"],
+        "Skoda": ["Octavia", "Superb", "Fabia", "Kodiaq", "Karoq", "Rapid", "Scala"],
+        "Toyota": ["Corolla", "Camry", "RAV4", "Prius", "Aurion", "Yaris", "Land Cruiser", "Hilux", "C-HR", "Avensis"],
+        "Volkswagen": ["Golf", "Passat", "Tiguan", "Touareg", "Jetta", "Polo", "Transporter", "Caddy", "Arteon", "Sharan", "Touran"],
+        "BMW": ["Seria 1", "Seria 3", "Seria 5", "Seria 7", "X1", "X3", "X5", "X6", "X7", "M3", "M5"],
+        "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLE", "GLC", "GLS", "Sprinter", "Vito", "G-Class", "CLA"],
+        "Audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q3", "Q5", "Q7", "Q8", "e-tron"],
+        "Hyundai": ["Tucson", "Santa Fe", "Kona", "Elantra", "Accent", "Ioniq", "i20", "i30"],
+        "Kia": ["Sportage", "Sorento", "Ceed", "Rio", "Niro", "Stonic", "Picanto"],
+        "Nissan": ["Qashqai", "X-Trail", "Juke", "Leaf", "Navara", "Micra", "Note"],
+        "Renault": ["Megane", "Clio", "Kadjar", "Captur", "Scenic", "Master", "Kangoo", "Fluence", "Zoe"],
+        "Ford": ["Focus", "Fiesta", "Kuga", "Mondeo", "Transit", "Ranger", "EcoSport", "Puma"],
+        "Volvo": ["XC40", "XC60", "XC90", "S60", "S90", "V60", "V90"],
+        "Lexus": ["RX", "NX", "UX", "ES", "LS", "IS", "GX"],
+        "Honda": ["Civic", "CR-V", "HR-V", "Accord", "Jazz", "Insight"],
+        "Mazda": ["CX-3", "CX-5", "CX-30", "Mazda2", "Mazda3", "Mazda6", "CX-9"],
+        "Mitsubishi": ["Outlander", "L200", "ASX", "Pajero", "Eclipse Cross", "Colt"],
+        "Suzuki": ["Vitara", "SX4 S-Cross", "Swift", "Jimny", "Ignis"],
+        "Opel": ["Astra", "Insignia", "Corsa", "Grandland X", "Mokka", "Zafira", "Vivaro"],
+        "Peugeot": ["208", "308", "508", "2008", "3008", "5008", "Partner", "Expert"],
+        "Citroen": ["C3", "C4", "C5 Aircross", "Berlingo", "Jumper"],
+        "Land Rover": ["Range Rover", "Range Rover Sport", "Discovery", "Defender", "Evoque", "Velar"],
+        "Porsche": ["Cayenne", "Macan", "Panamera", "Taycan", "911"],
+        "Geely": ["Coolray", "Atlas Pro", "Tugella", "Monjaro"],
+        "Haval": ["Jolion", "H6", "Dargo"]
+    };
+
+    res.render('add-car', { 
+        title: 'Adaugă mașină', 
+        error: null, 
+        carDatabase: carDatabase 
+    });
 });
 
 app.get('/profile', async (req, res) => {

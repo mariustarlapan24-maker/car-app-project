@@ -46,12 +46,11 @@
                     <label for="make" class="form-label fw-bold">Marca</label>
                     <select name="make" id="make" class="form-select form-select-lg" required>
                         <option value="" disabled selected>Selectează marca…</option>
-                        <option value="Audi">Audi</option>
-                        <option value="BMW">BMW</option>
-                        <option value="Mercedes">Mercedes</option>
-                        <option value="Volkswagen">Volkswagen</option>
-                        <option value="Toyota">Toyota</option>
-                        <option value="Honda">Honda</option>
+                        <% if (typeof carDatabase !== 'undefined') { %>
+                            <% Object.keys(carDatabase).sort().forEach(function(marca) { %>
+                                <option value="<%= marca %>"><%= marca %></option>
+                            <% }); %>
+                        <% } %>
                     </select>
                 </div>
 
@@ -80,21 +79,30 @@
     // --- Logica Select Dinamic ---
     const makeSelect = document.getElementById('make');
     const modelSelect = document.getElementById('model');
-    const modelsData = {
-        "Audi": ["A3", "A4", "A6", "Q5", "Q7"],
-        "BMW": ["X1", "X3", "X5", "M3", "M5"],
-        "Mercedes": ["C200", "E300", "S500", "GLE"],
-        "Volkswagen": ["Golf", "Passat", "Tiguan", "Touareg"],
-        "Toyota": ["Corolla", "Camry", "RAV4", "Hilux"],
-        "Honda": ["Civic", "Accord", "CR-V", "HR-V"]
-    };
+    // Pasul 1: Punem datele într-un element ascuns (metodă mult mai sigură)
+    const modelsDataRaw = `<%- JSON.stringify(carDatabase || {}) %>`;
+
+    // Pasul 2: Îi spunem browserului să transforme textul în obiect JavaScript
+    let modelsData = {};
+    try {
+        modelsData = JSON.parse(modelsDataRaw);
+    } catch (e) {
+        console.error("Eroare la încărcarea listei de mașini:", e);
+        // Listă de rezervă în caz de eroare critică
+        modelsData = { "Dacia": ["Logan", "Duster"], "Skoda": ["Octavia"] };
+    }
 
     makeSelect.addEventListener('change', () => {
+        const selectedMake = makeSelect.value;
         modelSelect.innerHTML = '<option value="" disabled selected>Selectează modelul…</option>';
-        (modelsData[makeSelect.value] || []).forEach(m => {
-            const opt = new Option(m, m);
-            modelSelect.add(opt);
-        });
+    
+        if (selectedMake && modelsData[selectedMake]) {
+            modelSelect.disabled = false; // Deblocăm câmpul
+            modelsData[selectedMake].sort().forEach(m => {
+                const opt = new Option(m, m);
+                modelSelect.add(opt);
+            });
+        }
     });
 
     // --- Limitare Imagini ---
