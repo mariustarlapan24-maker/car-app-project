@@ -179,6 +179,42 @@ app.get('/chat', (req, res)=> {
     });
 });
 
+app.get('/chat', (req, res)=> {
+    if (!req.session.userId) return res.redirect('/login');
+    res.render('chat', {
+        title: 'Chat',
+        userId: req.session.userId,
+        username: 'User_' + req.session.userId.substring(0, 4),
+        roomId: 'defaultCarRoom'
+    });
+});
+
+// --- ADAUGĂ ACEASTA ACUM ---
+app.get('/chat/private/:carId', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    
+    try {
+        const carId = req.params.carId;
+        // Căutăm mașina pentru a afișa numărul ei în titlul chat-ului
+        const car = await Car.findById(carId);
+        
+        if (!car) {
+            return res.status(404).send("Mașina nu a fost găsită.");
+        }
+
+        res.render('chat', {
+            title: `Chat Mașină: ${car.plateNumber}`,
+            userId: req.session.userId,
+            username: 'User_' + req.session.userId.substring(0, 4),
+            // RoomId devine ID-ul mașinii pentru a separa conversațiile
+            roomId: carId 
+        });
+    } catch (err) {
+        console.error("Eroare la chat-ul privat:", err);
+        res.redirect('/');
+    }
+});
+
 app.get('/api/search', async (req, res) => {
     const { plate } = req.query;
     if (!plate) return res.json([]);
