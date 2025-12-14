@@ -169,49 +169,49 @@ app.get('/profile', async (req, res) => {
     }
 });
 
+// ==========================================
+// --- RUTE CHAT ---
+// ==========================================
+
+// 1. Chat General (din bara de navigare)
 app.get('/chat', (req, res)=> {
     if (!req.session.userId) return res.redirect('/login');
     res.render('chat', {
-        title: 'Chat',
+        title: 'Chat General',
         userId: req.session.userId,
         username: 'User_' + req.session.userId.substring(0, 4),
-        roomId: 'defaultCarRoom'
+        roomId: 'general' // Trimitem roomId obligatoriu pentru a evita eroarea 500
     });
 });
 
-app.get('/chat', (req, res)=> {
-    if (!req.session.userId) return res.redirect('/login');
-    res.render('chat', {
-        title: 'Chat',
-        userId: req.session.userId,
-        username: 'User_' + req.session.userId.substring(0, 4),
-        roomId: 'defaultCarRoom'
-    });
-});
-
-// --- ADAUGĂ ACEASTA ACUM ---
+// 2. Chat Privat (deschis de la o mașină specifică)
 app.get('/chat/private/:carId', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     
     try {
         const carId = req.params.carId;
-        // Căutăm mașina pentru a afișa numărul ei în titlul chat-ului
+
+        // Validăm formatul ID-ului pentru a nu crăpa baza de date
+        if (!mongoose.Types.ObjectId.isValid(carId)) {
+            return res.status(400).send("ID-ul mașinii este invalid.");
+        }
+
         const car = await Car.findById(carId);
         
         if (!car) {
-            return res.status(404).send("Mașina nu a fost găsită.");
+            // Dacă mașina nu e găsită, nu facem redirect, ci dăm un mesaj clar
+            return res.status(404).send("Mașina nu a fost găsită în baza de date.");
         }
 
         res.render('chat', {
-            title: `Chat Mașină: ${car.plateNumber}`,
+            title: `Chat: ${car.plateNumber}`,
             userId: req.session.userId,
             username: 'User_' + req.session.userId.substring(0, 4),
-            // RoomId devine ID-ul mașinii pentru a separa conversațiile
-            roomId: carId 
+            roomId: carId.toString() // ID-ul mașinii devine numele camerei
         });
     } catch (err) {
-        console.error("Eroare la chat-ul privat:", err);
-        res.redirect('/');
+        console.error("Eroare la deschiderea chat-ului privat:", err);
+        res.status(500).send("Eroare de server la încărcarea chat-ului.");
     }
 });
 
